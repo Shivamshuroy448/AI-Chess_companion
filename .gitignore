@@ -1,0 +1,20 @@
+# Node & Build artifacts
+node_modules/
+dist/
+.vite/
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Gemini & Configs
+.env
+.env.local
+
+# Loose legacy extension root files (Use ai_companion_extension/ instead)
+content/
+popup/
+engine/
+manifest.json
+chess-ai-helper.user.js
