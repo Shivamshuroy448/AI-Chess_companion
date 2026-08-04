@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess AI Companion - Stockfish 16 Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script type="module" crossorigin src="./assets/index-DMEP8YhS.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-UodA33_K.css">
+</head>
+<body class="theme-cyberpunk">
+
+  <!-- Header & Top Navigation -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>Chess <span>AI Companion</span></h1>
+        <span class="version-tag">Grandmaster Analysis Mode</span>
+      </div>
+    </div>
+
+    <!-- Active Color Selection Bar -->
+    <div class="color-picker-group">
+      <span class="picker-label">WHO ARE YOU PLAYING AS?</span>
+      <div class="color-btn-toggle">
+        <button id="btn-color-white" class="color-btn active" title="Play as White">
+          <span class="color-icon">♔</span> YOU ARE WHITE
+        </button>
+        <button id="btn-color-black" class="color-btn" title="Play as Black">
+          <span class="color-icon">♚</span> YOU ARE BLACK
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Matchup Status Indicator Bar -->
+  <div class="matchup-bar-container">
+    <div class="matchup-badges">
+      <span id="badge-you" class="badge badge-you">YOU: WHITE (♔)</span>
+      <span class="badge-vs">VS</span>
+      <span id="badge-opp" class="badge badge-opp">OPPONENT: BLACK (♚)</span>
+    </div>
+    <div id="live-status-banner" class="status-banner-your-turn">
+      <div id="status-main-text">🔥 YOUR TURN (WHITE)! AI Recommends: e2 ➔ e4</div>
+      <div id="status-sub-text">Play this move on your online game to win!</div>
+    </div>
+  </div>
+
+  <!-- Main App Layout Workspace -->
+  <main class="app-workspace">
+
+    <!-- Left: Chessboard & Overlay Canvas Container -->
+    <section class="board-column">
+      <div class="board-container-wrapper">
+        <!-- Evaluation Bar -->
+        <div class="eval-bar-wrapper">
+          <div class="eval-bar">
+            <div id="eval-bar-fill" class="eval-bar-fill" style="height: 50%;"></div>
+          </div>
+          <span id="eval-score-val" class="eval-score-text">+0.00</span>
+        </div>
+
+        <!-- Interactive 8x8 Board Container -->
+        <div class="board-frame">
+          <div id="chess-board-grid" class="chess-board-grid"></div>
+          <!-- Dynamic SVG Vector Arrow Overlay -->
+          <svg id="svg-arrow-overlay" class="arrow-overlay-layer"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: AI Control Dashboard & Analysis Panel -->
+    <section class="controls-column">
+
+      <!-- AI Winning Move Recommendation Card -->
+      <div class="card recommendation-card">
+        <div class="card-header">
+          <span class="card-icon">⭐</span>
+          <h2>AI Winning Move Suggestion</h2>
+        </div>
+        <div class="card-body">
+          <div class="recommendation-hero">
+            <div class="eval-badge">
+              <span class="eval-label">YOUR ADVANTAGE</span>
+              <span id="eval-score-display" class="eval-value">+0.00</span>
+            </div>
+            <div class="move-badge">
+              <span id="label-recommended-for" class="move-label">WINNING MOVE FOR YOU (WHITE)</span>
+              <div id="eval-best-move" class="move-value">e2 ➔ e4 (e4)</div>
+            </div>
+          </div>
+
+          <!-- Clean Static Text Displays -->
+          <div class="control-row" style="margin-top: 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;">GAME MODE</span>
+            <div style="font-size: 13px; font-weight: 700; color: #00e5ff; background: rgba(0, 229, 255, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); margin-top: 4px;">
+              🪞 Mirror Mode (Input Opponent Move ➔ Get AI Move)
+            </div>
+          </div>
+
+          <div class="control-row" style="margin-top: 10px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;">ENGINE ANALYSIS DEPTH</span>
+            <div style="font-size: 13px; font-weight: 700; color: #00e676; background: rgba(0, 230, 118, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.2); margin-top: 4px;">
+              🏆 Grandmaster Analysis (3500+ ELO)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Move History / PGN Importer Card -->
+      <div class="card pgn-card" style="border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);">
+        <div class="card-header">
+          <span class="card-icon">📜</span>
+          <h2>Move History / PGN Importer (Play from Middle of Game)</h2>
+        </div>
+        <div class="card-body">
+          <p class="card-description">
+            Copy the move list from Chess.com (e.g. <code>1. e4 e6 2. Nc3 Qh4 3. d4 Bb4</code>) and paste it below or press <strong>Ctrl + V</strong>! Reconstructs the exact mid-game position with 100% accuracy!
+          </p>
+          <textarea id="input-pgn-text" rows="3" placeholder="Paste moves or PGN here (e.g. 1. e4 e6 2. Nc3 Qh4 3. d4 Bb4)..." class="custom-input" style="width: 100%; font-family: monospace; resize: vertical; margin-bottom: 10px;"></textarea>
+          <button id="btn-load-pgn" class="btn btn-primary btn-full-width">
+            ⚡ Load Mid-Game Moves & Calculate Winning Move
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="card controls-card">
+        <div class="card-header">
+          <span class="card-icon">🕹️</span>
+          <h2>Quick Controls</h2>
+        </div>
+        <div class="card-body grid-buttons">
+          <button id="btn-new-game" class="btn btn-primary">New Game</button>
+          <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
+          <button id="btn-flip" class="btn btn-secondary">Flip Board</button>
+        </div>
+        <div class="switches-list">
+          <div class="switch-row">
+            <span>Show Move Arrow Overlay</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="switch-overlay" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="switch-row">
+            <span>Sound Effects</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="switch-sound" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="control-row inline-row">
+            <label for="select-theme">Board Visual Theme</label>
+            <select id="select-theme" class="custom-select">
+              <option value="theme-cyberpunk">Cyberpunk Neon</option>
+              <option value="theme-midnight">Midnight Glass</option>
+              <option value="theme-emerald">Emerald Grandmaster</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEN Importer -->
+      <div class="card fen-card">
+        <div class="card-header">
+          <span class="card-icon">🔍</span>
+          <h2>Position FEN Importer</h2>
+        </div>
+        <div class="card-body flex-row">
+          <input type="text" id="input-fen" placeholder="Paste FEN string to analyze..." class="custom-input" />
+          <button id="btn-load-fen" class="btn btn-primary">Load FEN</button>
+        </div>
+      </div>
+
+      <!-- Move History Log -->
+      <div class="card history-card">
+        <div class="card-header">
+          <span class="card-icon">📜</span>
+          <h2>Move History Log</h2>
+        </div>
+        <div class="card-body">
+          <div id="move-history-log" class="history-log-box"></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+</body>
+</html>
