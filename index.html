@@ -168,6 +168,39 @@
         </div>
       </div>
 
+      <!-- 🏆 Global Leaderboard & Worldwide Winnings Card -->
+      <div class="card leaderboard-card" style="border: 2px solid #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);">
+        <div class="card-header" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="card-icon">🌍</span>
+            <h2>Worldwide Winnings & Leaderboard</h2>
+          </div>
+          <span class="live-pulse-badge">🔴 LIVE</span>
+        </div>
+        <div class="card-body">
+          <!-- Ticker Stats -->
+          <div class="global-stats-ticker">
+            <div class="ticker-box">
+              <span class="ticker-label">WORLDWIDE WINS</span>
+              <span id="global-total-wins" class="ticker-number">14,892</span>
+            </div>
+            <div class="ticker-box">
+              <span class="ticker-label">ACTIVE PLAYERS</span>
+              <span id="global-active-players" class="ticker-number">1,420</span>
+            </div>
+          </div>
+
+          <!-- Leaderboard Filter Tabs -->
+          <div class="lead-tabs">
+            <button id="btn-lead-top" class="lead-tab-btn active">Top Champions</button>
+            <button id="btn-lead-me" class="lead-tab-btn">My Global Rank</button>
+          </div>
+
+          <!-- Leaderboard Table -->
+          <div id="leaderboard-table-list" class="leaderboard-table-box"></div>
+        </div>
+      </div>
+
       <!-- Move History / PGN Importer Card -->
       <div class="card pgn-card" style="border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);">
         <div class="card-header">

@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth & Win Tracker with Enterprise XSS & Input Defense.
+ * Integrates Stockfish 16 Engine, Google OAuth & Global Leaderboard Dashboard.
  */
 
 import { Chess } from 'chess.js';
@@ -19,13 +19,30 @@ class ChessApp {
     this.currentUser = null;
     this.googleClientId = '658722838654-ie4ffiu8452lfk56gv28ogl8jpvt7a0i.apps.googleusercontent.com';
 
+    // Global Leaderboard Mock Master Database
+    this.globalLeaderboard = [
+      { name: 'Magnus C.', flag: '🇳🇴', wins: 482, rate: '92%' },
+      { name: 'Hikaru N.', flag: '🇺🇸', wins: 415, rate: '89%' },
+      { name: 'Vidit G.', flag: '🇮🇳', wins: 378, rate: '86%' },
+      { name: 'Alireza F.', flag: '🇫🇷', wins: 340, rate: '84%' },
+      { name: 'Pragg D.', flag: '🇮🇳', wins: 295, rate: '85%' },
+      { name: 'Gukesh D.', flag: '🇮🇳', wins: 280, rate: '84%' },
+      { name: 'Fabiano C.', flag: '🇺🇸', wins: 260, rate: '81%' },
+      { name: 'Nakamura K.', flag: '🇯🇵', wins: 245, rate: '80%' }
+    ];
+
+    this.globalTotalWins = 14892;
+    this.globalActivePlayers = 1420;
+
     this.renderer = new BoardRenderer('chess-board-grid', (square) => this.handleSquareClick(square));
 
     this.initUserSession();
     this.initGoogleAuth();
     this.initUI();
+    this.initLeaderboardUI();
     this.initPgnImporter();
     this.updateBoard(true);
+    this.startGlobalTicker();
   }
 
   /* --- Security & XSS Sanitization Helpers --- */
@@ -38,6 +55,98 @@ class ChessApp {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  /* --- Global Leaderboard & Real-Time Ticker --- */
+
+  initLeaderboardUI() {
+    const btnTop = document.getElementById('btn-lead-top');
+    const btnMe = document.getElementById('btn-lead-me');
+
+    btnTop?.addEventListener('click', () => {
+      btnTop.classList.add('active');
+      btnMe?.classList.remove('active');
+      this.renderLeaderboard('top');
+    });
+
+    btnMe?.addEventListener('click', () => {
+      btnMe.classList.add('active');
+      btnTop?.classList.remove('active');
+      this.renderLeaderboard('me');
+    });
+
+    this.renderLeaderboard('top');
+  }
+
+  renderLeaderboard(viewMode = 'top') {
+    const container = document.getElementById('leaderboard-table-list');
+    if (!container) return;
+
+    // Combine global champions with active current user
+    let list = [...this.globalLeaderboard];
+
+    const userWon = this.currentUser ? (this.currentUser.gamesWon || 0) : 0;
+    const userPlayed = this.currentUser ? (this.currentUser.gamesPlayed || 0) : 0;
+    const userRate = userPlayed > 0 ? Math.round((userWon / userPlayed) * 100) + '%' : '0%';
+    const userName = this.currentUser ? (this.currentUser.username || 'You') : 'You (Guest)';
+
+    const userEntry = {
+      name: `${userName} (You)`,
+      flag: '🎮',
+      wins: userWon,
+      rate: userRate,
+      isUser: true
+    };
+
+    list.push(userEntry);
+    list.sort((a, b) => b.wins - a.wins);
+
+    if (viewMode === 'me') {
+      // Scroll to user rank
+      const userIndex = list.findIndex(item => item.isUser);
+      const start = Math.max(0, userIndex - 2);
+      list = list.slice(start, start + 6);
+    }
+
+    let html = '';
+    list.forEach((item, idx) => {
+      const globalRank = this.globalLeaderboard.findIndex(g => g.wins <= item.wins) + 1 || (idx + 1);
+      const isGold = globalRank === 1;
+      const isSilver = globalRank === 2;
+      const isBronze = globalRank === 3;
+
+      let rankClass = '';
+      let rankText = `#${globalRank}`;
+      if (isGold) { rankClass = 'lead-rank-gold'; rankText = '🥇 #1'; }
+      else if (isSilver) { rankClass = 'lead-rank-silver'; rankText = '🥈 #2'; }
+      else if (isBronze) { rankClass = 'lead-rank-bronze'; rankText = '🥉 #3'; }
+
+      const rowClass = item.isUser ? 'lead-row my-rank-row' : 'lead-row';
+
+      html += `
+        <div class="${rowClass}">
+          <span class="lead-rank ${rankClass}">${rankText}</span>
+          <div class="lead-player">
+            <span class="lead-flag">${item.flag}</span>
+            <span>${this.escapeHtml(item.name)}</span>
+          </div>
+          <span class="lead-wins">${item.wins} Wins</span>
+          <span class="lead-rate">${item.rate}</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  startGlobalTicker() {
+    setInterval(() => {
+      this.globalTotalWins += 1;
+      const winCounterEl = document.getElementById('global-total-wins');
+      if (winCounterEl) {
+        winCounterEl.textContent = this.globalTotalWins.toLocaleString();
+      }
+    }, 18000);
   }
 
   /* --- User Session & Google Auth --- */
@@ -124,6 +233,7 @@ class ChessApp {
     }
 
     this.saveUserSession();
+    this.renderLeaderboard('top');
     const modalLogin = document.getElementById('modal-login');
     if (modalLogin) modalLogin.classList.add('hidden');
     this.showToast(`✨ Signed in with Google as ${this.currentUser.username}!`);
@@ -180,6 +290,7 @@ class ChessApp {
     const oldName = this.currentUser ? (this.currentUser.username || this.currentUser.email) : '';
     this.currentUser = null;
     this.saveUserSession();
+    this.renderLeaderboard('top');
     this.showToast(`🚪 Logged out ${oldName}. Guest mode active.`);
   }
 
@@ -198,6 +309,7 @@ class ChessApp {
     }
 
     this.saveUserSession();
+    this.renderLeaderboard('top');
     sounds.playCheckmate();
     this.showToast(`🏆 VICTORY RECORDED! Total Wins: ${this.currentUser.gamesWon}`);
   }
