@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Enterprise Security & XSS Protection Headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://lichess.org https://accounts.google.com https://*.google.com; img-src 'self' data: https:; object-src 'none'; frame-src https://accounts.google.com;" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+  <title>Chess AI Companion - Stockfish 16 Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" crossorigin src="./assets/index-D-ygUpCp.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Bl27vxpK.css">
+</head>
+<body class="theme-cyberpunk">
+
+  <!-- Header & Top Navigation -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>Chess <span>AI Companion</span></h1>
+        <span class="version-tag">Grandmaster Analysis Mode</span>
+      </div>
+    </div>
+
+    <!-- Active Color Selection Bar -->
+    <div class="color-picker-group">
+      <span class="picker-label">WHO ARE YOU PLAYING AS?</span>
+      <div class="color-btn-toggle">
+        <button id="btn-color-white" class="color-btn active" title="Play as White">
+          <span class="color-icon">♔</span> YOU ARE WHITE
+        </button>
+        <button id="btn-color-black" class="color-btn" title="Play as Black">
+          <span class="color-icon">♚</span> YOU ARE BLACK
+        </button>
+      </div>
+    </div>
+
+    <!-- User Profile & Win Tracker Header Widget -->
+    <div class="user-profile-widget">
+      <!-- When Logged Out -->
+      <div id="user-logged-out-view" class="user-auth-box">
+        <button id="btn-open-login" class="btn btn-auth">
+          🔑 Sign in with Google
+        </button>
+      </div>
+
+      <!-- When Logged In -->
+      <div id="user-logged-in-view" class="user-auth-box hidden">
+        <div class="user-stats-badge">
+          <span id="user-avatar-container" class="user-avatar-icon">👤</span>
+          <select id="user-flag-select" class="user-flag-picker" title="Change Nationality Flag">
+            <option value="🇮🇳">🇮🇳 India</option>
+            <option value="🇺🇸">🇺🇸 USA</option>
+            <option value="🇬🇧">🇬🇧 UK</option>
+            <option value="🇨🇦">🇨🇦 Canada</option>
+            <option value="🇦🇺">🇦🇺 Australia</option>
+            <option value="🇩🇪">🇩🇪 Germany</option>
+            <option value="🇫🇷">🇫🇷 France</option>
+            <option value="🇯🇵">🇯🇵 Japan</option>
+            <option value="🇧🇷">🇧🇷 Brazil</option>
+            <option value="🇪🇸">🇪🇸 Spain</option>
+            <option value="🇳🇴">🇳🇴 Norway</option>
+            <option value="🏳️">🏳️ Global</option>
+          </select>
+          <span id="user-display-name" class="user-name-text">Player</span>
+          <div class="win-count-pill">
+            ⚡ <span id="stat-elo-rating">1200</span> ELO
+            <span class="win-rate-text">(🏆 <span id="stat-games-won">0</span> W)</span>
+          </div>
+        </div>
+        <button id="btn-user-logout" class="btn btn-logout" title="Logout">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Google 1-Click Sign-In Cyberpunk Modal -->
+  <div id="modal-login" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🌐 Sign in with Google</h2>
+        <button id="btn-close-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="text-align: center;">
+        <p class="modal-description" style="margin-bottom: 24px;">
+          Sign in with your Google account to track your ELO rating and verified victories on the worldwide leaderboard!
+        </p>
+
+        <!-- Official Native Google Sign-In Container -->
+        <div class="google-auth-container" style="display: flex; justify-content: center; margin-bottom: 10px;">
+          <div id="google-signin-btn-target"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Matchup Status Indicator Bar -->
+  <div class="matchup-bar-container">
+    <div class="matchup-badges">
+      <span id="badge-you" class="badge badge-you">YOU: WHITE (♔)</span>
+      <span class="badge-vs">VS</span>
+      <span id="badge-opp" class="badge badge-opp">OPPONENT: BLACK (♚)</span>
+    </div>
+    <div id="live-status-banner" class="status-banner-your-turn">
+      <div id="status-main-text">🔥 YOUR TURN (WHITE)! AI Recommends: e2 ➔ e4</div>
+      <div id="status-sub-text">Play this move on your online game to win!</div>
+    </div>
+  </div>
+
+  <!-- Main App Layout Workspace -->
+  <main class="app-workspace">
+
+    <!-- Left: Fixed Chessboard & Eval Bar Container -->
+    <section class="board-column">
+      <div class="board-container-wrapper">
+        <!-- Evaluation Bar -->
+        <div class="eval-bar-wrapper">
+          <div class="eval-bar">
+            <div id="eval-bar-fill" class="eval-bar-fill" style="height: 50%;"></div>
+          </div>
+          <span id="eval-score-val" class="eval-score-text">+0.00</span>
+        </div>
+
+        <!-- Interactive 8x8 Board Container -->
+        <div class="board-frame">
+          <div id="chess-board-grid" class="chess-board-grid"></div>
+          <!-- Dynamic SVG Vector Arrow Overlay -->
+          <svg id="svg-arrow-overlay" class="arrow-overlay-layer"></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Single Unified Side Panel with 3 Tab Options -->
+    <section class="controls-column">
+
+      <!-- AI Winning Move Recommendation Hero Card -->
+      <div class="card recommendation-card">
+        <div class="card-header">
+          <span class="card-icon">⭐</span>
+          <h2>AI Winning Move Suggestion</h2>
+        </div>
+        <div class="card-body">
+          <div class="recommendation-hero">
+            <div class="eval-badge">
+              <span class="eval-label">YOUR ADVANTAGE</span>
+              <span id="eval-score-display" class="eval-value">+0.00</span>
+            </div>
+            <div class="move-badge">
+              <span id="label-recommended-for" class="move-label">WINNING MOVE FOR YOU (WHITE)</span>
+              <div id="eval-best-move" class="move-value">e2 ➔ e4 (e4)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Single Side Panel with 3 Switchable Options -->
+      <div class="card dashboard-tabbed-card" style="border: 2px solid #00e5ff; box-shadow: 0 0 24px rgba(0, 229, 255, 0.3);">
+        
+        <!-- 3 Tab Switcher Navigation -->
+        <div class="dash-nav-tabs">
+          <button id="btn-dash-tab-lead" class="dash-tab-btn active">🏆 Leaderboard</button>
+          <button id="btn-dash-tab-pgn" class="dash-tab-btn">📜 Import PGN / FEN</button>
+          <button id="btn-dash-tab-controls" class="dash-tab-btn">🕹️ Controls & History</button>
+        </div>
+
+        <div class="dash-tab-content">
+
+          <!-- OPTION 1: Worldwide Winnings & Leaderboard -->
+          <div id="pane-dash-lead" class="dash-pane active">
+            <div class="card-header" style="justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="card-icon">🌍</span>
+                <h2>Worldwide Leaderboard</h2>
+              </div>
+              <span class="live-pulse-badge">🔴 LIVE</span>
+            </div>
+
+            <div class="global-stats-ticker" style="margin-bottom: 10px;">
+              <div class="ticker-box">
+                <span class="ticker-label">WORLDWIDE WINS</span>
+                <span id="global-total-wins" class="ticker-number">14,892</span>
+              </div>
+              <div class="ticker-box">
+                <span class="ticker-label">ACTIVE PLAYERS</span>
+                <span id="global-active-players" class="ticker-number">1,420</span>
+              </div>
+            </div>
+
+            <div class="lead-tabs" style="margin-bottom: 8px;">
+              <button id="btn-lead-top" class="lead-tab-btn active">Top Champions</button>
+              <button id="btn-lead-me" class="lead-tab-btn">My Global Rank</button>
+            </div>
+
+            <div id="leaderboard-table-list" class="leaderboard-table-box" style="height: 180px;"></div>
+          </div>
+
+          <!-- OPTION 2: PGN & FEN Importer -->
+          <div id="pane-dash-pgn" class="dash-pane hidden">
+            <div class="card-header" style="margin-bottom: 10px; font-size: 14px;">
+              <span class="card-icon">📜</span>
+              <h2>Import PGN / FEN Position</h2>
+            </div>
+            <p class="card-description" style="margin-bottom: 8px; font-size: 12px;">
+              Paste move notation (e.g. <code>1. e4 e6 2. Nc3 Qh4</code>) or FEN string to analyze position:
+            </p>
+            <textarea id="input-pgn-text" rows="4" placeholder="Paste moves or PGN here (or Ctrl + V anywhere)..." class="custom-input" style="width: 100%; font-family: monospace; resize: none; margin-bottom: 10px; font-size: 12px;"></textarea>
+            <button id="btn-load-pgn" class="btn btn-primary btn-full-width" style="margin-bottom: 12px; padding: 10px;">
+              ⚡ Load Mid-Game Moves & Calculate Winning Move
+            </button>
+
+            <div class="flex-row">
+              <input type="text" id="input-fen" placeholder="Paste FEN position string..." class="custom-input" style="font-size: 12px;" />
+              <button id="btn-load-fen" class="btn btn-secondary" style="white-space: nowrap;">Load FEN</button>
+            </div>
+          </div>
+
+          <!-- OPTION 3: Quick Controls & Move History Log -->
+          <div id="pane-dash-controls" class="dash-pane hidden">
+            <div class="card-header" style="margin-bottom: 10px; font-size: 14px;">
+              <span class="card-icon">🕹️</span>
+              <h2>Quick Controls & Move Log</h2>
+            </div>
+
+            <div class="grid-buttons" style="margin-bottom: 10px;">
+              <button id="btn-new-game" class="btn btn-primary">New Game</button>
+              <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
+              <button id="btn-flip" class="btn btn-secondary">Flip Board</button>
+            </div>
+
+            <div class="switches-list" style="margin-bottom: 12px;">
+              <div class="switch-row">
+                <span>Show Move Arrow Overlay</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-overlay" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="switch-row">
+                <span>Sound Effects</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-sound" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="control-row inline-row" style="margin-top: 6px;">
+                <label for="select-theme" style="font-size: 12px; font-weight: 700; color: #94a3b8;">Visual Theme</label>
+                <select id="select-theme" class="custom-select" style="padding: 6px 10px; font-size: 12px;">
+                  <option value="theme-cyberpunk">Cyberpunk Neon</option>
+                  <option value="theme-midnight">Midnight Glass</option>
+                  <option value="theme-emerald">Emerald Grandmaster</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">MOVE LOG</div>
+            <div id="move-history-log" class="history-log-box" style="height: 110px;"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+</body>
+</html>
+

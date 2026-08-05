@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess.com AI Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <div class="brand">
+        <svg class="crown-icon" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="#00e5ff" d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+        </svg>
+        <span>Chess AI Assistant</span>
+      </div>
+      <span class="version-tag">v1.0</span>
+    </div>
+
+    <div class="settings-card">
+      <div class="setting-group">
+        <label for="engine-depth">Engine Search Depth</label>
+        <div class="range-wrapper">
+          <input type="range" id="engine-depth" min="5" max="20" value="12">
+          <span id="depth-val">12</span>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label for="arrow-color">Arrow Overlay Color</label>
+        <select id="arrow-color">
+          <option value="#00e5ff" selected>Cyan (Default)</option>
+          <option value="#00e676">Neon Green</option>
+          <option value="#ffab00">Amber Gold</option>
+          <option value="#ff1744">Crimson Red</option>
+        </select>
+      </div>
+
+      <div class="setting-group toggle-group">
+        <span>Enable Live Engine Analysis</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-extension" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="status-banner">
+      <div class="dot active"></div>
+      <span>Ready for Chess.com</span>
+    </div>
+
+    <div class="footer-notice">
+      Created for practice against computer bots & spectator analysis.
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

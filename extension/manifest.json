@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Chess.com Stockfish 16 & Gemini AI Overlay",
+  "version": "1.0",
+  "description": "Real-time Stockfish 16 NNUE & Gemini AI Strategic Coach Overlay on Chess.com!",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.chess.com/*",
+    "https://lichess.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.chess.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

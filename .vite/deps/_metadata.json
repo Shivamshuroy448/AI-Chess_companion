@@ -1,0 +1,15 @@
+{
+  "hash": "f5bf1ba3",
+  "configHash": "ce49da23",
+  "lockfileHash": "d3aff37e",
+  "browserHash": "1b4b2096",
+  "optimized": {
+    "chess.js": {
+      "src": "../../node_modules/chess.js/dist/esm/chess.js",
+      "file": "chess__js.js",
+      "fileHash": "f6b5b06b",
+      "needsInterop": false
+    }
+  },
+  "chunks": {}
+}
