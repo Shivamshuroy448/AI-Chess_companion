@@ -180,7 +180,7 @@
         <div class="dash-tab-content">
 
           <!-- OPTION 1: Worldwide Winnings & Leaderboard -->
-          <div id="pane-dash-lead" class="dash-pane active">
+          <div id="pane-dash-lead" class="dash-pane active" style="position: relative;">
             <div class="card-header" style="justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="card-icon">🌍</span>
@@ -205,7 +205,20 @@
               <button id="btn-lead-me" class="lead-tab-btn">My Global Rank</button>
             </div>
 
-            <div id="leaderboard-table-list" class="leaderboard-table-box" style="height: 180px;"></div>
+            <!-- Leaderboard List Container with Blur Overlay for Guests -->
+            <div class="leaderboard-wrapper" style="position: relative; overflow: hidden; border-radius: 12px;">
+              <div id="leaderboard-table-list" class="leaderboard-table-box" style="height: 180px;"></div>
+              
+              <!-- Guest Mode Blur Overlay Shield -->
+              <div id="guest-leaderboard-overlay" class="guest-blur-overlay hidden">
+                <div class="lock-icon-badge">🔒</div>
+                <div class="lock-title">Leaderboard Locked</div>
+                <p class="lock-desc">Sign in with Google to view live global rankings & track your ELO!</p>
+                <button id="btn-overlay-login" class="btn btn-auth" style="margin-top: 6px; padding: 6px 14px; font-size: 11px;">
+                  🔑 Sign in with Google
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- OPTION 2: PGN & FEN Importer -->
@@ -276,7 +289,6 @@
     </section>
   </main>
 
-  <script type="module" src="/src/app.js?v=3.0.0"></script>
+  <script type="module" src="/src/app.js?v=4.0.0"></script>
 </body>
 </html>
-

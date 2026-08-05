@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth & Anti-Cheat ELO Rating System with 3-Tab Switchable Side Panel.
+ * Integrates Stockfish 16 Engine, Google OAuth, Anti-Cheat ELO System & Guest Blur Security Overlay.
  */
 
 import { Chess } from 'chess.js';
@@ -99,7 +99,7 @@ class ChessApp {
     tabControls?.addEventListener('click', () => activateTab(tabControls, paneControls));
   }
 
-  /* --- Global Leaderboard & Real-Time Ticker --- */
+  /* --- Global Leaderboard & Real-Time Ticker with Guest Blur --- */
 
   initLeaderboardUI() {
     const btnTop = document.getElementById('btn-lead-top');
@@ -117,12 +117,41 @@ class ChessApp {
       this.renderLeaderboard('me');
     });
 
+    const btnOverlayLogin = document.getElementById('btn-overlay-login');
+    btnOverlayLogin?.addEventListener('click', () => {
+      const modalLogin = document.getElementById('modal-login');
+      modalLogin?.classList.remove('hidden');
+
+      const target = document.getElementById('google-signin-btn-target');
+      if (window.google && window.google.accounts && target) {
+        window.google.accounts.id.renderButton(target, {
+          theme: 'outline',
+          size: 'large',
+          type: 'standard',
+          shape: 'rectangular',
+          text: 'signin_with',
+          logo_alignment: 'left',
+          width: 300
+        });
+      }
+    });
+
     this.renderLeaderboard('top');
   }
 
   renderLeaderboard(viewMode = 'top') {
     const container = document.getElementById('leaderboard-table-list');
+    const overlay = document.getElementById('guest-leaderboard-overlay');
     if (!container) return;
+
+    // Guest Mode Blur Control
+    if (!this.currentUser) {
+      container.classList.add('blur-guest');
+      overlay?.classList.remove('hidden');
+    } else {
+      container.classList.remove('blur-guest');
+      overlay?.classList.add('hidden');
+    }
 
     let list = [...this.globalLeaderboard];
 
@@ -286,7 +315,7 @@ class ChessApp {
     this.renderLeaderboard('top');
     const modalLogin = document.getElementById('modal-login');
     if (modalLogin) modalLogin.classList.add('hidden');
-    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.elo} ELO)!`);
+    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.elo} ELO)! Unlocked Leaderboard.`);
   }
 
   saveUserSession() {
@@ -335,6 +364,8 @@ class ChessApp {
       loggedInView?.classList.add('hidden');
       loggedOutView?.classList.remove('hidden');
     }
+
+    this.renderLeaderboard('top');
   }
 
   logoutUser() {
