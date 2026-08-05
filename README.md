@@ -1,8 +1,8 @@
-# ♟️ Chess AI Companion — Stockfish 16 Engine
+# ♟️ CheckmateLab — Stockfish 16 Engine
 
-> **Live Demo**: [https://shivamshuroy448.github.io/AI-Chess_companion/](https://shivamshuroy448.github.io/AI-Chess_companion/)
+> **Live Demo**: [https://shivamshuroy448.github.io/CheckmateLab/](https://shivamshuroy448.github.io/CheckmateLab/)
 
-**Chess AI Companion** is an enterprise-grade, real-time chess assistant and tactical evaluation dashboard powered by **Stockfish 16 NNUE**. Designed for live game analysis, mid-game position reconstruction, daily tactical training, game reviews, and global leaderboard progression.
+**CheckmateLab** is an enterprise-grade, real-time chess assistant and tactical evaluation dashboard powered by **Stockfish 16 NNUE**. Designed for live game analysis, mid-game position reconstruction, daily tactical training, game reviews, and global leaderboard progression.
 
 ---
 
@@ -68,8 +68,8 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/Shivamshuroy448/AI-Chess_companion.git
-   cd AI-Chess_companion
+   git clone https://github.com/Shivamshuroy448/CheckmateLab.git
+   cd CheckmateLab
    ```
 
 2. **Install dependencies**:
@@ -98,7 +98,7 @@ The output production bundle will be generated in the `dist/` directory.
 ## 📂 Project Architecture
 
 ```text
-AI-Chess_companion/
+CheckmateLab/
 ├── ai_companion_extension/   # Chrome Extension & Userscript Helper
 │   ├── manifest.json
 │   ├── background.js
