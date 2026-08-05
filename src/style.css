@@ -305,11 +305,11 @@ body {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 10px 24px;
   display: grid;
-  grid-template-columns: minmax(500px, 540px) 1fr;
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(540px, 575px) 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
 @media (max-width: 1080px) {
@@ -438,8 +438,6 @@ body {
 .controls-column {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  justify-content: space-between;
   gap: 12px;
 }
 
@@ -1012,7 +1010,7 @@ input:checked + .slider:before { transform: translateX(20px); }
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid var(--border-card);
   border-radius: 12px;
-  height: 150px;
+  height: 185px;
   overflow-y: auto;
   padding: 6px;
   font-size: 12px;
