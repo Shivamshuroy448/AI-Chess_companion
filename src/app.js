@@ -17,6 +17,7 @@ class ChessApp {
 
     // User session & win tracker state
     this.currentUser = null;
+    this.googleClientId = '658722838654-ie4ffiu8452lfk56gv28ogl8jpvt7a0i.apps.googleusercontent.com';
 
     this.renderer = new BoardRenderer('chess-board-grid', (square) => this.handleSquareClick(square));
 
@@ -59,12 +60,11 @@ class ChessApp {
       }
     };
 
-    // Render Native Google Sign-In Button
     const setupNativeButton = () => {
       const target = document.getElementById('google-signin-btn-target');
       if (window.google && window.google.accounts && target) {
         window.google.accounts.id.initialize({
-          client_id: '7124968392-sampleclientid.apps.googleusercontent.com',
+          client_id: this.googleClientId,
           callback: window.handleGoogleCredentialResponse
         });
 
@@ -81,9 +81,9 @@ class ChessApp {
     };
 
     if (document.readyState === 'complete') {
-      setTimeout(setupNativeButton, 500);
+      setTimeout(setupNativeButton, 400);
     } else {
-      window.addEventListener('load', () => setTimeout(setupNativeButton, 500));
+      window.addEventListener('load', () => setTimeout(setupNativeButton, 400));
     }
   }
 
@@ -483,7 +483,7 @@ class ChessApp {
       this.updateBoard(true);
       this.showToast(`✨ Loaded ${this.game.history().length} moves! Current position ready.`);
     } catch (err) {
-      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nf3');
+      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nc3');
     }
   }
 
