@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth & Anti-Cheat ELO Rating System.
+ * Integrates Stockfish 16 Engine, Google OAuth & Anti-Cheat ELO Rating System with Tabbed Dashboard.
  */
 
 import { Chess } from 'chess.js';
@@ -43,6 +43,7 @@ class ChessApp {
     this.initGoogleAuth();
     this.initUI();
     this.initLeaderboardUI();
+    this.initDashboardTabs();
     this.initPgnImporter();
     this.updateBoard(true);
     this.startGlobalTicker();
@@ -72,6 +73,30 @@ class ChessApp {
       'SE': '🇸🇪', 'NO': '🇳🇴', 'MX': '🇲🇽', 'AR': '🇦🇷', 'ZA': '🇿🇦'
     };
     return flagMap[code] || '🇮🇳';
+  }
+
+  /* --- Sub-Tabbed Dashboard Navigation --- */
+
+  initDashboardTabs() {
+    const tabLead = document.getElementById('btn-dash-tab-lead');
+    const tabPgn = document.getElementById('btn-dash-tab-pgn');
+    const tabControls = document.getElementById('btn-dash-tab-controls');
+
+    const paneLead = document.getElementById('pane-dash-lead');
+    const panePgn = document.getElementById('pane-dash-pgn');
+    const paneControls = document.getElementById('pane-dash-controls');
+
+    const activateTab = (activeBtn, activePane) => {
+      [tabLead, tabPgn, tabControls].forEach(btn => btn?.classList.remove('active'));
+      [paneLead, panePgn, paneControls].forEach(pane => pane?.classList.add('hidden'));
+
+      activeBtn?.classList.add('active');
+      activePane?.classList.remove('hidden');
+    };
+
+    tabLead?.addEventListener('click', () => activateTab(tabLead, paneLead));
+    tabPgn?.addEventListener('click', () => activateTab(tabPgn, panePgn));
+    tabControls?.addEventListener('click', () => activateTab(tabControls, paneControls));
   }
 
   /* --- Global Leaderboard & Real-Time Ticker --- */

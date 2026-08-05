@@ -124,7 +124,7 @@
   <!-- Main App Layout Workspace -->
   <main class="app-workspace">
 
-    <!-- Left: Chessboard & Overlay Canvas Container -->
+    <!-- Left: Chessboard & Overlay Canvas Container (Bigger & Prominent) -->
     <section class="board-column">
       <div class="board-container-wrapper">
         <!-- Evaluation Bar -->
@@ -144,7 +144,7 @@
       </div>
     </section>
 
-    <!-- Right: AI Control Dashboard & Analysis Panel -->
+    <!-- Right: AI Control Dashboard & Analysis Panel (Compact Single-Screen Fit) -->
     <section class="controls-column">
 
       <!-- AI Winning Move Recommendation Card -->
@@ -165,133 +165,90 @@
             </div>
           </div>
 
-          <!-- Clean Static Text Displays -->
-          <div class="control-row" style="margin-top: 14px;">
-            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;">GAME MODE</span>
-            <div style="font-size: 13px; font-weight: 700; color: #00e5ff; background: rgba(0, 229, 255, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2); margin-top: 4px;">
-              🪞 Mirror Mode (Input Opponent Move ➔ Get AI Move)
+          <div class="control-row-inline" style="display: flex; gap: 10px;">
+            <div style="flex: 1; font-size: 12px; font-weight: 700; color: #00e5ff; background: rgba(0, 229, 255, 0.08); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2);">
+              🪞 Mirror Mode Active
             </div>
-          </div>
-
-          <div class="control-row" style="margin-top: 10px;">
-            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;">ENGINE ANALYSIS DEPTH</span>
-            <div style="font-size: 13px; font-weight: 700; color: #00e676; background: rgba(0, 230, 118, 0.08); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.2); margin-top: 4px;">
-              🏆 Grandmaster Analysis (3500+ ELO)
+            <div style="flex: 1; font-size: 12px; font-weight: 700; color: #00e676; background: rgba(0, 230, 118, 0.08); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.2);">
+              🏆 Stockfish 16 (3500 ELO)
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 🏆 Global Leaderboard & Worldwide Winnings Card -->
-      <div class="card leaderboard-card" style="border: 2px solid #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);">
-        <div class="card-header" style="justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="card-icon">🌍</span>
-            <h2>Worldwide Winnings & Leaderboard</h2>
-          </div>
-          <span class="live-pulse-badge">🔴 LIVE</span>
+      <!-- Dashboard Multi-Tab Sub-Panel (Leaderboard / PGN Importer / Controls) -->
+      <div class="card dashboard-tabbed-card">
+        <div class="dash-nav-tabs">
+          <button id="btn-dash-tab-lead" class="dash-tab-btn active">🏆 Leaderboard</button>
+          <button id="btn-dash-tab-pgn" class="dash-tab-btn">📜 Import PGN / FEN</button>
+          <button id="btn-dash-tab-controls" class="dash-tab-btn">🕹️ Controls & History</button>
         </div>
-        <div class="card-body">
-          <!-- Ticker Stats -->
-          <div class="global-stats-ticker">
-            <div class="ticker-box">
-              <span class="ticker-label">WORLDWIDE WINS</span>
-              <span id="global-total-wins" class="ticker-number">14,892</span>
+
+        <div class="dash-tab-content">
+          <!-- TAB 1: Worldwide Leaderboard -->
+          <div id="pane-dash-lead" class="dash-pane active">
+            <div class="global-stats-ticker" style="margin-bottom: 10px;">
+              <div class="ticker-box">
+                <span class="ticker-label">WORLDWIDE WINS</span>
+                <span id="global-total-wins" class="ticker-number">14,892</span>
+              </div>
+              <div class="ticker-box">
+                <span class="ticker-label">ACTIVE PLAYERS</span>
+                <span id="global-active-players" class="ticker-number">1,420</span>
+              </div>
             </div>
-            <div class="ticker-box">
-              <span class="ticker-label">ACTIVE PLAYERS</span>
-              <span id="global-active-players" class="ticker-number">1,420</span>
+
+            <div class="lead-tabs" style="margin-bottom: 8px;">
+              <button id="btn-lead-top" class="lead-tab-btn active">Top Champions</button>
+              <button id="btn-lead-me" class="lead-tab-btn">My Rank</button>
+            </div>
+
+            <div id="leaderboard-table-list" class="leaderboard-table-box" style="height: 180px;"></div>
+          </div>
+
+          <!-- TAB 2: PGN & FEN Importer -->
+          <div id="pane-dash-pgn" class="dash-pane hidden">
+            <p class="card-description" style="margin-bottom: 8px; font-size: 12px;">
+              Paste move notation (e.g. <code>1. e4 e6 2. Nc3 Qh4</code>) or FEN string to load mid-game position:
+            </p>
+            <textarea id="input-pgn-text" rows="3" placeholder="Paste moves or PGN here (or Ctrl + V anywhere)..." class="custom-input" style="width: 100%; font-family: monospace; resize: none; margin-bottom: 8px; font-size: 12px;"></textarea>
+            <button id="btn-load-pgn" class="btn btn-primary btn-full-width" style="margin-bottom: 10px; padding: 8px;">
+              ⚡ Load Mid-Game Moves & Calculate Winning Move
+            </button>
+
+            <div class="flex-row">
+              <input type="text" id="input-fen" placeholder="Paste FEN position string..." class="custom-input" style="font-size: 12px;" />
+              <button id="btn-load-fen" class="btn btn-secondary" style="white-space: nowrap;">Load FEN</button>
             </div>
           </div>
 
-          <!-- Leaderboard Filter Tabs -->
-          <div class="lead-tabs">
-            <button id="btn-lead-top" class="lead-tab-btn active">Top Champions</button>
-            <button id="btn-lead-me" class="lead-tab-btn">My Global Rank</button>
-          </div>
+          <!-- TAB 3: Quick Controls & Move History -->
+          <div id="pane-dash-controls" class="dash-pane hidden">
+            <div class="grid-buttons" style="margin-bottom: 10px;">
+              <button id="btn-new-game" class="btn btn-primary">New Game</button>
+              <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
+              <button id="btn-flip" class="btn btn-secondary">Flip Board</button>
+            </div>
 
-          <!-- Leaderboard Table -->
-          <div id="leaderboard-table-list" class="leaderboard-table-box"></div>
-        </div>
-      </div>
+            <div class="switches-list" style="margin-bottom: 10px;">
+              <div class="switch-row">
+                <span>Show Move Arrow Overlay</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-overlay" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="switch-row">
+                <span>Sound Effects</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="switch-sound" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
 
-      <!-- Move History / PGN Importer Card -->
-      <div class="card pgn-card" style="border: 2px solid #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);">
-        <div class="card-header">
-          <span class="card-icon">📜</span>
-          <h2>Move History / PGN Importer (Play from Middle of Game)</h2>
-        </div>
-        <div class="card-body">
-          <p class="card-description">
-            Copy the move list from Chess.com (e.g. <code>1. e4 e6 2. Nc3 Qh4 3. d4 Bb4</code>) and paste it below or press <strong>Ctrl + V</strong>! Reconstructs the exact mid-game position with 100% accuracy!
-          </p>
-          <textarea id="input-pgn-text" rows="3" placeholder="Paste moves or PGN here (e.g. 1. e4 e6 2. Nc3 Qh4 3. d4 Bb4)..." class="custom-input" style="width: 100%; font-family: monospace; resize: vertical; margin-bottom: 10px;"></textarea>
-          <button id="btn-load-pgn" class="btn btn-primary btn-full-width">
-            ⚡ Load Mid-Game Moves & Calculate Winning Move
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Action Controls & Anti-Cheat Fair Play Tracker -->
-      <div class="card controls-card">
-        <div class="card-header">
-          <span class="card-icon">🕹️</span>
-          <h2>Quick Controls & Fair Play System</h2>
-        </div>
-        <div class="card-body grid-buttons">
-          <div style="grid-column: span 3; background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; color: #00e676; text-align: center;">
-            🛡️ Anti-Cheat Verified: Wins & +25 ELO are automatically awarded on Checkmate!
+            <div id="move-history-log" class="history-log-box" style="height: 100px;"></div>
           </div>
-          <button id="btn-new-game" class="btn btn-primary">New Game</button>
-          <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
-          <button id="btn-flip" class="btn btn-secondary">Flip Board</button>
-        </div>
-        <div class="switches-list">
-          <div class="switch-row">
-            <span>Show Move Arrow Overlay</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="switch-overlay" checked />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="switch-row">
-            <span>Sound Effects</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="switch-sound" checked />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="control-row inline-row">
-            <label for="select-theme">Board Visual Theme</label>
-            <select id="select-theme" class="custom-select">
-              <option value="theme-cyberpunk">Cyberpunk Neon</option>
-              <option value="theme-midnight">Midnight Glass</option>
-              <option value="theme-emerald">Emerald Grandmaster</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- FEN Importer -->
-      <div class="card fen-card">
-        <div class="card-header">
-          <span class="card-icon">🔍</span>
-          <h2>Position FEN Importer</h2>
-        </div>
-        <div class="card-body flex-row">
-          <input type="text" id="input-fen" placeholder="Paste FEN string to analyze..." class="custom-input" />
-          <button id="btn-load-fen" class="btn btn-primary">Load FEN</button>
-        </div>
-      </div>
-
-      <!-- Move History Log -->
-      <div class="card history-card">
-        <div class="card-header">
-          <span class="card-icon">📜</span>
-          <h2>Move History Log</h2>
-        </div>
-        <div class="card-body">
-          <div id="move-history-log" class="history-log-box"></div>
         </div>
       </div>
 

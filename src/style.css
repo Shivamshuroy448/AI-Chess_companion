@@ -229,24 +229,25 @@ body {
   border: 1px solid rgba(0, 229, 255, 0.3);
 }
 
-/* Main Workspace - Compact Single Screen Fit Layout */
+/* Main Workspace - Enlarged Board Single-Page Fit */
 .app-workspace {
   flex: 1;
-  max-width: 1400px;
+  max-width: 1520px;
   width: 100%;
   margin: 0 auto;
-  padding: 12px 24px;
+  padding: 14px 28px;
   display: grid;
-  grid-template-columns: minmax(420px, 490px) 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(540px, 1.25fr) 1fr;
+  gap: 24px;
   align-items: start;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .app-workspace {
     grid-template-columns: 1fr;
   }
 }
+
 
 
 
@@ -1011,6 +1012,50 @@ input:checked + .slider:before { transform: translateX(20px); }
   border-color: #00e5ff;
   box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
 }
+
+/* Sub-Tabbed Dashboard Card */
+.dashboard-tabbed-card {
+  padding: 14px 18px !important;
+}
+
+.dash-nav-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dash-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dash-tab-btn.active {
+  background: linear-gradient(135deg, #00e5ff 0%, #00b0ff 100%);
+  color: #0f172a;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0, 229, 255, 0.3);
+}
+
+.dash-pane {
+  display: block;
+}
+
+.dash-pane.hidden {
+  display: none !important;
+}
+
 
 
 
