@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Lichess Game Importer.
+ * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Chess.com/Lichess Live Game Importer.
  */
 
 import { Chess } from 'chess.js';
@@ -19,14 +19,14 @@ class ChessApp {
     // Anti-Cheat Session State
     this.hasClaimedCurrentGame = false;
 
-    // Feature 3: Digital Chess Clock State
+    // Digital Chess Clock State
     this.clockTimeSec = 180; // 3 min default
     this.whiteTime = 180;
     this.blackTime = 180;
     this.clockTimer = null;
     this.isClockRunning = false;
 
-    // Feature 4: Daily Puzzle State
+    // Daily Puzzle State
     this.currentPuzzleIndex = 0;
     this.activePuzzle = null;
     this.puzzleStepIndex = 0;
@@ -90,7 +90,7 @@ class ChessApp {
     return flagMap[code] || '🇮🇳';
   }
 
-  /* --- Feature 3: Integrated Digital Chess Clock --- */
+  /* --- Integrated Digital Chess Clock --- */
 
   initChessClock() {
     const selectClock = document.getElementById('select-clock-time');
@@ -184,7 +184,7 @@ class ChessApp {
     }
   }
 
-  /* --- Feature 4: Daily Tactical Puzzles --- */
+  /* --- Daily Tactical Puzzles --- */
 
   initPuzzleSystem() {
     const btnStart = document.getElementById('btn-start-puzzle');
@@ -712,7 +712,7 @@ class ChessApp {
     });
   }
 
-  /* --- Feature 5: Lichess / Chess.com Live Game URL Importer --- */
+  /* --- Lichess & Chess.com Live Game URL Importer --- */
 
   initPgnImporter() {
     const btnLoadPgn = document.getElementById('btn-load-pgn');
@@ -744,32 +744,55 @@ class ChessApp {
   }
 
   async fetchLiveGameFromUrl(urlOrId) {
-    let gameId = urlOrId.trim();
+    const str = urlOrId.trim();
 
-    if (gameId.includes('lichess.org/')) {
-      const parts = gameId.split('lichess.org/');
-      gameId = parts[1].split('/')[0].slice(0, 8);
-    } else if (gameId.includes('chess.com/')) {
-      this.showToast('ℹ️ For Chess.com, copy the move list (PGN) and paste below!');
-      return;
+    // 1. Lichess URL
+    if (str.includes('lichess.org/')) {
+      const parts = str.split('lichess.org/');
+      const gameId = parts[1].split('/')[0].slice(0, 8);
+      try {
+        this.showToast(`🔍 Fetching live game PGN from Lichess (${gameId})...`);
+        const response = await fetch(`https://lichess.org/game/export/${gameId}?evals=false&clocks=false`);
+        if (response.ok) {
+          const pgnText = await response.text();
+          const pgnArea = document.getElementById('input-pgn-text');
+          if (pgnArea) pgnArea.value = pgnText;
+          this.loadMoveNotation(pgnText);
+          this.showToast(`✨ Live Lichess game imported successfully!`);
+          return;
+        }
+      } catch (e) {}
     }
 
-    try {
-      this.showToast(`🔍 Fetching live game PGN from Lichess (${gameId})...`);
-      const response = await fetch(`https://lichess.org/game/export/${gameId}?evals=false&clocks=false`);
+    // 2. Chess.com URL or Game ID
+    if (str.includes('chess.com') || /^\d+$/.test(str)) {
+      const match = str.match(/(\d{7,})/);
+      if (match && match[1]) {
+        const gameId = match[1];
+        try {
+          this.showToast(`🔍 Fetching live game PGN from Chess.com API (${gameId})...`);
 
-      if (response.ok) {
-        const pgnText = await response.text();
-        const pgnArea = document.getElementById('input-pgn-text');
-        if (pgnArea) pgnArea.value = pgnText;
-        this.loadMoveNotation(pgnText);
-        this.showToast(`✨ Live Lichess game imported successfully!`);
-      } else {
-        this.showToast('⚠️ Could not fetch game from Lichess. Ensure game ID is valid.');
+          let response = await fetch(`https://api.chess.com/pub/game/live/${gameId}`);
+          if (!response.ok) {
+            response = await fetch(`https://api.chess.com/pub/game/daily/${gameId}`);
+          }
+
+          if (response.ok) {
+            const data = await response.json();
+            const pgnContent = data.pgn || (data.game && data.game.pgn);
+            if (pgnContent) {
+              const pgnArea = document.getElementById('input-pgn-text');
+              if (pgnArea) pgnArea.value = pgnContent;
+              this.loadMoveNotation(pgnContent);
+              this.showToast(`✨ Live Chess.com game imported successfully!`);
+              return;
+            }
+          }
+        } catch (e) {}
       }
-    } catch (e) {
-      this.showToast('⚠️ Direct URL import error. Try copying PGN moves into text box.');
     }
+
+    this.showToast('⚠️ Could not auto-fetch game from URL. Copy PGN move text directly into box!');
   }
 
   loadMoveNotation(moveText) {
@@ -869,7 +892,6 @@ class ChessApp {
 
       const moveObj = { from: this.selectedSquare, to: squareStr, promotion: 'q' };
 
-      // Feature 4 Check: Puzzle solution check
       if (this.activePuzzle && this.puzzleStepIndex < this.activePuzzle.solutionMoves.length) {
         this.checkPuzzleMove(moveObj);
       }
@@ -988,8 +1010,6 @@ class ChessApp {
     }
   }
 
-  /* --- Feature 2: Real-time Win Probability % Odds Bar --- */
-
   updateEvalDisplay(evalResult, isYourTurn) {
     const scoreText = document.getElementById('eval-score-val');
     const scoreDisplay = document.getElementById('eval-score-display');
@@ -1011,8 +1031,6 @@ class ChessApp {
 
     const numeric = evalResult.numericScore || 0;
 
-    // Feature 2: Win Odds Calculation
-    // Win Probability = 1 / (1 + 10^(-score / 400))
     const winProbWhite = Math.round(100 / (1 + Math.pow(10, -numeric / 400)));
     const drawProb = Math.max(10, Math.round(30 - Math.abs(numeric) / 50));
     const winProbBlack = Math.max(0, 100 - winProbWhite - drawProb);
