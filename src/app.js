@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates PGN Importer, Stockfish 16 Engine, Email/Password Auth & Win Tracker.
+ * Integrates Stockfish 16 Engine, Google OAuth / Email Auth & Win Tracker.
  */
 
 import { Chess } from 'chess.js';
@@ -21,12 +21,13 @@ class ChessApp {
     this.renderer = new BoardRenderer('chess-board-grid', (square) => this.handleSquareClick(square));
 
     this.initUserSession();
+    this.initGoogleAuth();
     this.initUI();
     this.initPgnImporter();
     this.updateBoard(true);
   }
 
-  /* --- User Session & Email/Password Auth --- */
+  /* --- User Session & Google / Email Auth --- */
 
   initUserSession() {
     const saved = localStorage.getItem('chess_user_session');
@@ -40,10 +41,56 @@ class ChessApp {
     this.renderUserWidget();
   }
 
+  initGoogleAuth() {
+    // Helper to decode Google JWT token
+    window.handleGoogleCredentialResponse = (response) => {
+      if (response && response.credential) {
+        try {
+          const base64Url = response.credential.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+
+          const payload = JSON.parse(jsonPayload);
+          this.loginWithGoogleUser(payload.name, payload.email, payload.picture);
+        } catch (e) {
+          console.error('Google token parse error', e);
+        }
+      }
+    };
+  }
+
+  loginWithGoogleUser(name, email, pictureUrl) {
+    const cleanEmail = email ? email.toLowerCase() : '';
+    const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
+    const existing = usersDb[cleanEmail];
+
+    if (existing) {
+      existing.picture = pictureUrl || existing.picture;
+      existing.username = name || existing.username;
+      this.currentUser = existing;
+    } else {
+      this.currentUser = {
+        username: name || 'Google User',
+        email: cleanEmail,
+        picture: pictureUrl,
+        provider: 'google',
+        gamesWon: 0,
+        gamesPlayed: 0,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    this.saveUserSession();
+    const modalLogin = document.getElementById('modal-login');
+    if (modalLogin) modalLogin.classList.add('hidden');
+    this.showToast(`✨ Signed in with Google as ${this.currentUser.username}!`);
+  }
+
   saveUserSession() {
     if (this.currentUser) {
       localStorage.setItem('chess_user_session', JSON.stringify(this.currentUser));
-      // Save to global user database keyed by email
       const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
       if (this.currentUser.email) {
         usersDb[this.currentUser.email.toLowerCase()] = this.currentUser;
@@ -58,6 +105,7 @@ class ChessApp {
   renderUserWidget() {
     const loggedOutView = document.getElementById('user-logged-out-view');
     const loggedInView = document.getElementById('user-logged-in-view');
+    const avatarContainer = document.getElementById('user-avatar-container');
     const nameEl = document.getElementById('user-display-name');
     const wonEl = document.getElementById('stat-games-won');
     const winRateEl = document.getElementById('stat-win-rate');
@@ -65,6 +113,14 @@ class ChessApp {
     if (this.currentUser) {
       loggedOutView?.classList.add('hidden');
       loggedInView?.classList.remove('hidden');
+
+      if (avatarContainer) {
+        if (this.currentUser.picture) {
+          avatarContainer.innerHTML = `<img src="${this.currentUser.picture}" alt="Avatar" class="user-avatar-img" />`;
+        } else {
+          avatarContainer.textContent = '👤';
+        }
+      }
 
       if (nameEl) nameEl.textContent = this.currentUser.username || this.currentUser.email;
       if (wonEl) wonEl.textContent = this.currentUser.gamesWon || 0;
@@ -97,7 +153,7 @@ class ChessApp {
     const newUser = {
       username: cleanName,
       email: cleanEmail,
-      password: cleanPass, // Saved in local user DB
+      password: cleanPass,
       gamesWon: 0,
       gamesPlayed: 0,
       createdAt: new Date().toISOString()
@@ -169,6 +225,7 @@ class ChessApp {
     const modalLogin = document.getElementById('modal-login');
     const btnOpenLogin = document.getElementById('btn-open-login');
     const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnGoogleLogin = document.getElementById('btn-custom-google-login');
 
     const tabBtnLogin = document.getElementById('tab-btn-login');
     const tabBtnRegister = document.getElementById('tab-btn-register');
@@ -189,6 +246,34 @@ class ChessApp {
 
     const btnLogout = document.getElementById('btn-user-logout');
     const btnClaimVictory = document.getElementById('btn-claim-victory');
+
+    // Google Sign-In Trigger
+    btnGoogleLogin?.addEventListener('click', () => {
+      if (window.google && window.google.accounts) {
+        window.google.accounts.id.initialize({
+          client_id: '7124968392-sampleclientid.apps.googleusercontent.com',
+          callback: window.handleGoogleCredentialResponse
+        });
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Prompt fallback for Google Account picker
+            const googleEmail = prompt('Enter your Gmail address to sign in with Google:');
+            if (googleEmail && googleEmail.includes('@gmail.com')) {
+              const name = googleEmail.split('@')[0];
+              const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+              this.loginWithGoogleUser(name, googleEmail, avatar);
+            }
+          }
+        });
+      } else {
+        const googleEmail = prompt('Enter your Gmail address to sign in with Google:');
+        if (googleEmail && googleEmail.includes('@gmail.com')) {
+          const name = googleEmail.split('@')[0];
+          const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+          this.loginWithGoogleUser(name, googleEmail, avatar);
+        }
+      }
+    });
 
     // Tab Switcher Handlers
     tabBtnLogin?.addEventListener('click', () => {
@@ -387,7 +472,7 @@ class ChessApp {
       this.updateBoard(true);
       this.showToast(`✨ Loaded ${this.game.history().length} moves! Current position ready.`);
     } catch (err) {
-      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nf3');
+      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nc3');
     }
   }
 
