@@ -229,24 +229,25 @@ body {
   border: 1px solid rgba(0, 229, 255, 0.3);
 }
 
-/* Main Workspace - Prominent Grandmaster Chessboard Area */
+/* Main Workspace - Compact Single Screen Fit Layout */
 .app-workspace {
   flex: 1;
-  max-width: 1600px;
+  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 20px 32px;
+  padding: 12px 24px;
   display: grid;
-  grid-template-columns: minmax(640px, 1.35fr) 1fr;
-  gap: 36px;
+  grid-template-columns: minmax(420px, 490px) 1fr;
+  gap: 20px;
   align-items: start;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   .app-workspace {
     grid-template-columns: 1fr;
   }
 }
+
 
 
 /* Board Arena Box */
@@ -361,17 +362,18 @@ body {
 .controls-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .card {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-card);
-  border-radius: 20px;
-  padding: 20px 24px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
+
 
 .card-header {
   font-size: 15px;
