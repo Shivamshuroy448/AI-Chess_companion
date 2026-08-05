@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & 100% Robust Chess.com/Lichess Live Game Importer.
+ * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Multi-Proxy Chess.com/Lichess Live Game Importer.
  */
 
 import { Chess } from 'chess.js';
@@ -712,7 +712,7 @@ class ChessApp {
     });
   }
 
-  /* --- Lichess & Chess.com Live Game URL Importer --- */
+  /* --- Lichess & Chess.com Live Game Importer --- */
 
   initPgnImporter() {
     const btnLoadPgn = document.getElementById('btn-load-pgn');
@@ -743,7 +743,6 @@ class ChessApp {
     });
   }
 
-  // Decodes Chess.com packed moveList string (e.g. "lBZJmC5Q...") into move pairs
   decodeChessComMoveList(moveListStr) {
     if (!moveListStr || typeof moveListStr !== 'string') return [];
 
@@ -781,7 +780,7 @@ class ChessApp {
     const inputUrl = document.getElementById('input-game-url');
     if (inputUrl && cleanUrl !== str) inputUrl.value = cleanUrl;
 
-    const idMatch = cleanUrl.match(/(\d{9,12})/);
+    const idMatch = cleanUrl.match(/(\d{8,14})/);
     const gameId = idMatch ? idMatch[1] : null;
 
     // 1. Lichess URL
@@ -802,61 +801,63 @@ class ChessApp {
       } catch (e) {}
     }
 
-    // 2. Chess.com Live Game Importer via allorigins / pub API
+    // 2. Chess.com Live Game Importer
     if (gameId) {
-      try {
-        this.showToast(`🔍 Fetching live game ${gameId} from Chess.com...`);
+      this.showToast(`🔍 Fetching live game ${gameId} from Chess.com...`);
 
-        // Try direct Chess.com Public API first
-        const directUrls = [
-          `https://api.chess.com/pub/game/live/${gameId}`,
-          `https://api.chess.com/pub/game/daily/${gameId}`
-        ];
+      const proxyList = [
+        `https://www.chess.com/callback/live/game/${gameId}`,
+        `https://api.chess.com/pub/game/live/${gameId}`,
+        `https://api.chess.com/pub/game/daily/${gameId}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.chess.com/callback/live/game/${gameId}`)}`,
+        `https://corsproxy.io/?${encodeURIComponent(`https://www.chess.com/callback/live/game/${gameId}`)}`
+      ];
 
-        for (const targetUrl of directUrls) {
-          try {
-            const res = await fetch(targetUrl);
-            if (res.ok) {
-              const data = await res.json();
+      for (const targetUrl of proxyList) {
+        try {
+          const res = await fetch(targetUrl);
+          if (res.ok) {
+            let data;
+            const text = await res.text();
+            try {
+              data = JSON.parse(text);
+              if (data.contents) data = JSON.parse(data.contents);
+            } catch(e){}
+
+            if (data) {
               const pgnContent = data.pgn || (data.game && data.game.pgn);
               if (pgnContent) {
                 const pgnArea = document.getElementById('input-pgn-text');
                 if (pgnArea) pgnArea.value = pgnContent;
                 this.loadMoveNotation(pgnContent);
-                this.showToast(`✨ Live Chess.com game (${gameId}) imported successfully!`);
+                this.showToast(`✨ Live Chess.com game (${gameId}) imported!`);
                 return;
               }
-            }
-          } catch(errDirect) {}
-        }
 
-        // Try AllOrigins proxy for Chess.com live callback endpoint
-        const callbackUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://www.chess.com/callback/live/game/${gameId}`)}`;
-        const cbRes = await fetch(callbackUrl);
-        if (cbRes.ok) {
-          const cbData = await cbRes.json();
-          if (cbData && cbData.game && cbData.game.moveList) {
-            const parsedMoves = this.decodeChessComMoveList(cbData.game.moveList);
-            if (parsedMoves.length > 0) {
-              const tempGame = new Chess();
-              parsedMoves.forEach(m => {
-                try { tempGame.move({ from: m.from, to: m.to, promotion: 'q' }); } catch(e){}
-              });
-              this.game = tempGame;
-              this.hasClaimedCurrentGame = false;
-              const pgnArea = document.getElementById('input-pgn-text');
-              if (pgnArea) pgnArea.value = this.game.pgn() || this.game.fen();
-              this.clearRecommendations();
-              this.updateBoard(true);
-              this.showToast(`✨ Live Chess.com game (${gameId}) imported successfully!`);
-              return;
+              if (data.game && data.game.moveList) {
+                const parsedMoves = this.decodeChessComMoveList(data.game.moveList);
+                if (parsedMoves.length > 0) {
+                  const tempGame = new Chess();
+                  parsedMoves.forEach(m => {
+                    try { tempGame.move({ from: m.from, to: m.to, promotion: 'q' }); } catch(e){}
+                  });
+                  this.game = tempGame;
+                  this.hasClaimedCurrentGame = false;
+                  const pgnArea = document.getElementById('input-pgn-text');
+                  if (pgnArea) pgnArea.value = this.game.pgn() || this.game.fen();
+                  this.clearRecommendations();
+                  this.updateBoard(true);
+                  this.showToast(`✨ Live Chess.com game (${gameId}) imported!`);
+                  return;
+                }
+              }
             }
           }
-        }
-      } catch (e) {}
+        } catch(err) {}
+      }
     }
 
-    this.showToast('⚠️ Could not auto-fetch from URL. Copy PGN move text directly into box!');
+    this.showToast('ℹ️ For Chess.com live games, copy move text (1. e4 e5...) & press Ctrl+V anywhere!');
   }
 
   loadMoveNotation(moveText) {
