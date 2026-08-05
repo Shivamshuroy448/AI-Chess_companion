@@ -946,16 +946,13 @@ class ChessApp {
   }
 
   updateMatchupBar() {
-    const badgeYou = document.getElementById('badge-you');
     const badgeOpp = document.getElementById('badge-opp');
     const labelFor = document.getElementById('label-recommended-for');
 
     if (this.playerColor === 'w') {
-      if (badgeYou) badgeYou.textContent = 'YOU: WHITE (♔)';
       if (badgeOpp) badgeOpp.textContent = 'OPPONENT: BLACK (♚)';
       if (labelFor) labelFor.textContent = 'WINNING MOVE FOR YOU (WHITE)';
     } else {
-      if (badgeYou) badgeYou.textContent = 'YOU: BLACK (♚)';
       if (badgeOpp) badgeOpp.textContent = 'OPPONENT: WHITE (♔)';
       if (labelFor) labelFor.textContent = 'WINNING MOVE FOR YOU (BLACK)';
     }

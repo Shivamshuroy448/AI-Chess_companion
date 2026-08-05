@@ -34,19 +34,6 @@
       </div>
     </div>
 
-    <!-- Active Color Selection Bar -->
-    <div class="color-picker-group">
-      <span class="picker-label">WHO ARE YOU PLAYING AS?</span>
-      <div class="color-btn-toggle">
-        <button id="btn-color-white" class="color-btn active" title="Play as White">
-          <span class="color-icon">♔</span> YOU ARE WHITE
-        </button>
-        <button id="btn-color-black" class="color-btn" title="Play as Black">
-          <span class="color-icon">♚</span> YOU ARE BLACK
-        </button>
-      </div>
-    </div>
-
     <!-- User Profile & Win Tracker Header Widget -->
     <div class="user-profile-widget">
       <!-- When Logged Out -->
@@ -168,8 +155,19 @@
   <!-- Live Matchup Status Indicator Bar & Feature 1 Opening Detector -->
   <div class="matchup-bar-container">
     <div class="matchup-badges">
-      <span id="badge-you" class="badge badge-you">YOU: WHITE (♔)</span>
-      <span class="badge-vs">VS</span>
+      <!-- Active Color Selection Bar (WHO ARE YOU PLAYING AS?) moved to Left above Board -->
+      <div class="color-picker-group">
+        <span class="picker-label">WHO ARE YOU PLAYING AS?</span>
+        <div class="color-btn-toggle">
+          <button id="btn-color-white" class="color-btn active" title="Play as White">
+            <span class="color-icon">♔</span> YOU ARE WHITE
+          </button>
+          <button id="btn-color-black" class="color-btn" title="Play as Black">
+            <span class="color-icon">♚</span> YOU ARE BLACK
+          </button>
+        </div>
+      </div>
+
       <span id="badge-opp" class="badge badge-opp">OPPONENT: BLACK (♚)</span>
       <!-- Feature 1: Real-time ECO Opening Detector Badge -->
       <span id="badge-opening" class="badge badge-opening" style="background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; margin-left: auto;">
@@ -404,6 +402,6 @@
     </section>
   </main>
 
-  <script type="module" src="/src/app.js?v=13.0.0"></script>
+  <script type="module" src="/src/app.js?v=14.0.0"></script>
 </body>
 </html>
