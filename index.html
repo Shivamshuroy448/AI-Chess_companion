@@ -37,7 +37,54 @@
         </button>
       </div>
     </div>
+
+    <!-- User Profile & Win Tracker Header Widget -->
+    <div class="user-profile-widget">
+      <!-- When Logged Out -->
+      <div id="user-logged-out-view" class="user-auth-box">
+        <button id="btn-open-login" class="btn btn-auth">
+          🔑 Login / Sign Up
+        </button>
+      </div>
+
+      <!-- When Logged In -->
+      <div id="user-logged-in-view" class="user-auth-box hidden">
+        <div class="user-stats-badge">
+          <span class="user-avatar-icon">👤</span>
+          <span id="user-display-name" class="user-name-text">Player</span>
+          <div class="win-count-pill">
+            🏆 Won: <span id="stat-games-won">0</span>
+            <span class="win-rate-text">(<span id="stat-win-rate">0</span>%)</span>
+          </div>
+        </div>
+        <button id="btn-user-logout" class="btn btn-logout" title="Logout">
+          🚪 Logout
+        </button>
+      </div>
+    </div>
   </header>
+
+  <!-- Login / Register Cyberpunk Modal -->
+  <div id="modal-login" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🔑 Player Login & Win Tracker</h2>
+        <button id="btn-close-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">
+          Sign in with your username to automatically track your wins, games played, and win rate statistics!
+        </p>
+        <div class="form-group">
+          <label for="input-username">ENTER YOUR USERNAME</label>
+          <input type="text" id="input-username" placeholder="e.g. Grandmaster123" class="custom-input" autocomplete="off" />
+        </div>
+        <button id="btn-submit-login" class="btn btn-primary btn-full-width">
+          ⚡ Login & Start Tracking Wins
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Live Matchup Status Indicator Bar -->
   <div class="matchup-bar-container">
@@ -130,13 +177,16 @@
         </div>
       </div>
 
-      <!-- Quick Action Controls -->
+      <!-- Quick Action Controls & Victory Claim -->
       <div class="card controls-card">
         <div class="card-header">
           <span class="card-icon">🕹️</span>
-          <h2>Quick Controls</h2>
+          <h2>Quick Controls & Win Tracker</h2>
         </div>
         <div class="card-body grid-buttons">
+          <button id="btn-claim-victory" class="btn btn-success" style="grid-column: span 2; background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color: #0f172a; font-weight: 800; border: none; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);">
+            🏆 Record Victory (+1 Win)
+          </button>
           <button id="btn-new-game" class="btn btn-primary">New Game</button>
           <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
           <button id="btn-flip" class="btn btn-secondary">Flip Board</button>

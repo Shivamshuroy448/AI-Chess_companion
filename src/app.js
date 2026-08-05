@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates PGN Importer & Stockfish 16 Engine.
+ * Integrates PGN Importer, Stockfish 16 Engine, User Auth & Win Tracker.
  */
 
 import { Chess } from 'chess.js';
@@ -15,14 +15,164 @@ class ChessApp {
     this.playerColor = 'w';
     this.gameMode = 'mirror';
 
+    // User session & win tracker state
+    this.currentUser = null;
+
     this.renderer = new BoardRenderer('chess-board-grid', (square) => this.handleSquareClick(square));
 
+    this.initUserSession();
     this.initUI();
     this.initPgnImporter();
     this.updateBoard(true);
   }
 
+  /* --- User Session & Win Tracker --- */
+
+  initUserSession() {
+    const saved = localStorage.getItem('chess_user_session');
+    if (saved) {
+      try {
+        this.currentUser = JSON.parse(saved);
+      } catch (e) {
+        this.currentUser = null;
+      }
+    }
+    this.renderUserWidget();
+  }
+
+  saveUserSession() {
+    if (this.currentUser) {
+      localStorage.setItem('chess_user_session', JSON.stringify(this.currentUser));
+      // Save global user dictionary for persistent usernames
+      const usersDict = JSON.parse(localStorage.getItem('chess_users_db') || '{}');
+      usersDict[this.currentUser.username] = this.currentUser;
+      localStorage.setItem('chess_users_db', JSON.stringify(usersDict));
+    } else {
+      localStorage.removeItem('chess_user_session');
+    }
+    this.renderUserWidget();
+  }
+
+  renderUserWidget() {
+    const loggedOutView = document.getElementById('user-logged-out-view');
+    const loggedInView = document.getElementById('user-logged-in-view');
+    const nameEl = document.getElementById('user-display-name');
+    const wonEl = document.getElementById('stat-games-won');
+    const winRateEl = document.getElementById('stat-win-rate');
+
+    if (this.currentUser) {
+      loggedOutView?.classList.add('hidden');
+      loggedInView?.classList.remove('hidden');
+
+      if (nameEl) nameEl.textContent = this.currentUser.username;
+      if (wonEl) wonEl.textContent = this.currentUser.gamesWon || 0;
+
+      const played = this.currentUser.gamesPlayed || 0;
+      const won = this.currentUser.gamesWon || 0;
+      const rate = played > 0 ? Math.round((won / played) * 100) : 0;
+      if (winRateEl) winRateEl.textContent = rate;
+    } else {
+      loggedInView?.classList.add('hidden');
+      loggedOutView?.classList.remove('hidden');
+    }
+  }
+
+  loginUser(username) {
+    const cleanName = username ? username.trim() : '';
+    if (!cleanName) return;
+
+    // Fetch existing user data or initialize new profile
+    const usersDict = JSON.parse(localStorage.getItem('chess_users_db') || '{}');
+    const existing = usersDict[cleanName];
+
+    if (existing) {
+      this.currentUser = existing;
+    } else {
+      this.currentUser = {
+        username: cleanName,
+        gamesWon: 0,
+        gamesPlayed: 0,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    this.saveUserSession();
+    this.showToast(`👋 Welcome back, ${cleanName}! Win tracker active.`);
+  }
+
+  logoutUser() {
+    const oldName = this.currentUser ? this.currentUser.username : '';
+    this.currentUser = null;
+    this.saveUserSession();
+    this.showToast(`🚪 Logged out ${oldName}. Guest mode active.`);
+  }
+
+  recordVictory() {
+    if (!this.currentUser) {
+      // Create guest profile if claiming win while logged out
+      this.currentUser = {
+        username: 'Guest Player',
+        gamesWon: 1,
+        gamesPlayed: 1,
+        createdAt: new Date().toISOString()
+      };
+    } else {
+      this.currentUser.gamesWon = (this.currentUser.gamesWon || 0) + 1;
+      this.currentUser.gamesPlayed = (this.currentUser.gamesPlayed || 0) + 1;
+    }
+
+    this.saveUserSession();
+    sounds.playCheckmate();
+    this.showToast(`🏆 VICTORY RECORDED! Total Wins: ${this.currentUser.gamesWon}`);
+  }
+
+  /* --- UI Event Listeners --- */
+
   initUI() {
+    // Auth Modal Listeners
+    const modalLogin = document.getElementById('modal-login');
+    const btnOpenLogin = document.getElementById('btn-open-login');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnSubmitLogin = document.getElementById('btn-submit-login');
+    const inputUsername = document.getElementById('input-username');
+    const btnLogout = document.getElementById('btn-user-logout');
+    const btnClaimVictory = document.getElementById('btn-claim-victory');
+
+    btnOpenLogin?.addEventListener('click', () => {
+      modalLogin?.classList.remove('hidden');
+      inputUsername?.focus();
+    });
+
+    btnCloseModal?.addEventListener('click', () => {
+      modalLogin?.classList.add('hidden');
+    });
+
+    modalLogin?.addEventListener('click', (e) => {
+      if (e.target === modalLogin) modalLogin.classList.add('hidden');
+    });
+
+    const handleLoginSubmit = () => {
+      const username = inputUsername?.value;
+      if (username) {
+        this.loginUser(username);
+        modalLogin?.classList.add('hidden');
+        if (inputUsername) inputUsername.value = '';
+      } else {
+        alert('Please enter a username to sign in!');
+      }
+    };
+
+    btnSubmitLogin?.addEventListener('click', handleLoginSubmit);
+
+    inputUsername?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLoginSubmit();
+    });
+
+    btnLogout?.addEventListener('click', () => this.logoutUser());
+
+    btnClaimVictory?.addEventListener('click', () => this.recordVictory());
+
+    // Color & Board Control Listeners
     const btnWhite = document.getElementById('btn-color-white');
     const btnBlack = document.getElementById('btn-color-black');
 
@@ -235,6 +385,12 @@ class ChessApp {
 
       if (this.game.isCheckmate()) {
         sounds.playCheckmate();
+        // Check if player won
+        const loserTurn = this.game.turn();
+        const playerWon = (loserTurn !== this.playerColor);
+        if (playerWon) {
+          this.recordVictory();
+        }
       } else if (this.game.inCheck()) {
         sounds.playCheck();
       } else if (move.captured) {
