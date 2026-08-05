@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth with Auto-Nationality Flag Detection & Global Leaderboard.
+ * Integrates Stockfish 16 Engine, Google OAuth & Anti-Cheat ELO Rating System.
  */
 
 import { Chess } from 'chess.js';
@@ -15,20 +15,23 @@ class ChessApp {
     this.playerColor = 'w';
     this.gameMode = 'mirror';
 
+    // Anti-Cheat Session State
+    this.hasClaimedCurrentGame = false;
+
     // User session & win tracker state
     this.currentUser = null;
     this.googleClientId = '658722838654-ie4ffiu8452lfk56gv28ogl8jpvt7a0i.apps.googleusercontent.com';
 
-    // Global Leaderboard Mock Master Database
+    // Global Leaderboard Mock Master Database (Sorted by ELO Rating)
     this.globalLeaderboard = [
-      { name: 'Magnus C.', flag: '🇳🇴', wins: 482, rate: '92%' },
-      { name: 'Hikaru N.', flag: '🇺🇸', wins: 415, rate: '89%' },
-      { name: 'Vidit G.', flag: '🇮🇳', wins: 378, rate: '86%' },
-      { name: 'Alireza F.', flag: '🇫🇷', wins: 340, rate: '84%' },
-      { name: 'Pragg D.', flag: '🇮🇳', wins: 295, rate: '85%' },
-      { name: 'Gukesh D.', flag: '🇮🇳', wins: 280, rate: '84%' },
-      { name: 'Fabiano C.', flag: '🇺🇸', wins: 260, rate: '81%' },
-      { name: 'Nakamura K.', flag: '🇯🇵', wins: 245, rate: '80%' }
+      { name: 'Magnus C.', flag: '🇳🇴', elo: 2850, wins: 482, rate: '92%' },
+      { name: 'Hikaru N.', flag: '🇺🇸', elo: 2800, wins: 415, rate: '89%' },
+      { name: 'Vidit G.', flag: '🇮🇳', elo: 2780, wins: 378, rate: '86%' },
+      { name: 'Alireza F.', flag: '🇫🇷', elo: 2750, wins: 340, rate: '84%' },
+      { name: 'Pragg D.', flag: '🇮🇳', elo: 2720, wins: 295, rate: '85%' },
+      { name: 'Gukesh D.', flag: '🇮🇳', elo: 2710, wins: 280, rate: '84%' },
+      { name: 'Fabiano C.', flag: '🇺🇸', elo: 2690, wins: 260, rate: '81%' },
+      { name: 'Nakamura K.', flag: '🇯🇵', elo: 2650, wins: 245, rate: '80%' }
     ];
 
     this.globalTotalWins = 14892;
@@ -98,6 +101,7 @@ class ChessApp {
 
     let list = [...this.globalLeaderboard];
 
+    const userElo = this.currentUser ? (this.currentUser.elo || 1200) : 1200;
     const userWon = this.currentUser ? (this.currentUser.gamesWon || 0) : 0;
     const userPlayed = this.currentUser ? (this.currentUser.gamesPlayed || 0) : 0;
     const userRate = userPlayed > 0 ? Math.round((userWon / userPlayed) * 100) + '%' : '0%';
@@ -107,13 +111,14 @@ class ChessApp {
     const userEntry = {
       name: `${userName} (You)`,
       flag: userFlag,
+      elo: userElo,
       wins: userWon,
       rate: userRate,
       isUser: true
     };
 
     list.push(userEntry);
-    list.sort((a, b) => b.wins - a.wins);
+    list.sort((a, b) => b.elo - a.elo);
 
     if (viewMode === 'me') {
       const userIndex = list.findIndex(item => item.isUser);
@@ -123,7 +128,7 @@ class ChessApp {
 
     let html = '';
     list.forEach((item, idx) => {
-      const globalRank = this.globalLeaderboard.findIndex(g => g.wins <= item.wins) + 1 || (idx + 1);
+      const globalRank = this.globalLeaderboard.findIndex(g => g.elo <= item.elo) + 1 || (idx + 1);
       const isGold = globalRank === 1;
       const isSilver = globalRank === 2;
       const isBronze = globalRank === 3;
@@ -143,8 +148,8 @@ class ChessApp {
             <span class="lead-flag">${item.flag}</span>
             <span>${this.escapeHtml(item.name)}</span>
           </div>
-          <span class="lead-wins">${item.wins} Wins</span>
-          <span class="lead-rate">${item.rate}</span>
+          <span class="lead-wins">${item.elo} ELO</span>
+          <span class="lead-rate">🏆 ${item.wins}</span>
         </div>
       `;
     });
@@ -169,6 +174,7 @@ class ChessApp {
     if (saved) {
       try {
         this.currentUser = JSON.parse(saved);
+        if (!this.currentUser.elo) this.currentUser.elo = 1200;
       } catch (e) {
         this.currentUser = null;
       }
@@ -235,6 +241,7 @@ class ChessApp {
       existing.picture = pictureUrl || existing.picture;
       existing.username = safeName || existing.username;
       existing.flag = existing.flag || detectedFlag || '🇮🇳';
+      existing.elo = existing.elo || 1200;
       this.currentUser = existing;
     } else {
       this.currentUser = {
@@ -242,6 +249,7 @@ class ChessApp {
         email: safeEmail,
         picture: pictureUrl,
         flag: detectedFlag || '🇮🇳',
+        elo: 1200,
         provider: 'google',
         gamesWon: 0,
         gamesPlayed: 0,
@@ -253,7 +261,7 @@ class ChessApp {
     this.renderLeaderboard('top');
     const modalLogin = document.getElementById('modal-login');
     if (modalLogin) modalLogin.classList.add('hidden');
-    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.flag})!`);
+    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.elo} ELO)!`);
   }
 
   saveUserSession() {
@@ -276,8 +284,8 @@ class ChessApp {
     const avatarContainer = document.getElementById('user-avatar-container');
     const flagSelect = document.getElementById('user-flag-select');
     const nameEl = document.getElementById('user-display-name');
+    const eloEl = document.getElementById('stat-elo-rating');
     const wonEl = document.getElementById('stat-games-won');
-    const winRateEl = document.getElementById('stat-win-rate');
 
     if (this.currentUser) {
       loggedOutView?.classList.add('hidden');
@@ -296,12 +304,8 @@ class ChessApp {
       }
 
       if (nameEl) nameEl.textContent = this.currentUser.username || this.currentUser.email;
+      if (eloEl) eloEl.textContent = this.currentUser.elo || 1200;
       if (wonEl) wonEl.textContent = this.currentUser.gamesWon || 0;
-
-      const played = this.currentUser.gamesPlayed || 0;
-      const won = this.currentUser.gamesWon || 0;
-      const rate = played > 0 ? Math.round((won / played) * 100) : 0;
-      if (winRateEl) winRateEl.textContent = rate;
     } else {
       loggedInView?.classList.add('hidden');
       loggedOutView?.classList.remove('hidden');
@@ -316,17 +320,36 @@ class ChessApp {
     this.showToast(`🚪 Logged out ${oldName}. Guest mode active.`);
   }
 
-  recordVictory() {
+  /* --- Anti-Cheat Checkmate Victory Verification --- */
+
+  verifyAndClaimCheckmateVictory() {
+    if (this.hasClaimedCurrentGame) return;
+
+    const history = this.game.history();
+    if (history.length < 6) {
+      this.showToast('⚠️ Game too short! At least 6 moves required to record a win.');
+      return;
+    }
+
+    const loserTurn = this.game.turn();
+    const playerWon = (loserTurn !== this.playerColor);
+
+    if (!playerWon) return;
+
+    this.hasClaimedCurrentGame = true;
+
     if (!this.currentUser) {
       this.currentUser = {
         username: 'Guest Player',
         email: 'guest@local',
         flag: '🇮🇳',
+        elo: 1225,
         gamesWon: 1,
         gamesPlayed: 1,
         createdAt: new Date().toISOString()
       };
     } else {
+      this.currentUser.elo = (this.currentUser.elo || 1200) + 25;
       this.currentUser.gamesWon = (this.currentUser.gamesWon || 0) + 1;
       this.currentUser.gamesPlayed = (this.currentUser.gamesPlayed || 0) + 1;
     }
@@ -334,7 +357,7 @@ class ChessApp {
     this.saveUserSession();
     this.renderLeaderboard('top');
     sounds.playCheckmate();
-    this.showToast(`🏆 VICTORY RECORDED! Total Wins: ${this.currentUser.gamesWon}`);
+    this.showToast(`🏆 CHECKMATE VERIFIED! +25 ELO Earned! Rating: ${this.currentUser.elo} ELO`);
   }
 
   /* --- UI Event Listeners --- */
@@ -344,7 +367,6 @@ class ChessApp {
     const btnOpenLogin = document.getElementById('btn-open-login');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnLogout = document.getElementById('btn-user-logout');
-    const btnClaimVictory = document.getElementById('btn-claim-victory');
     const flagSelect = document.getElementById('user-flag-select');
 
     flagSelect?.addEventListener('change', (e) => {
@@ -382,7 +404,6 @@ class ChessApp {
     });
 
     btnLogout?.addEventListener('click', () => this.logoutUser());
-    btnClaimVictory?.addEventListener('click', () => this.recordVictory());
 
     const btnWhite = document.getElementById('btn-color-white');
     const btnBlack = document.getElementById('btn-color-black');
@@ -487,6 +508,7 @@ class ChessApp {
       }
 
       this.game = tempGame;
+      this.hasClaimedCurrentGame = false;
       const currentFen = this.game.fen();
       const fenInput = document.getElementById('input-fen');
       if (fenInput) fenInput.value = currentFen;
@@ -530,6 +552,7 @@ class ChessApp {
 
   resetGame() {
     this.game.reset();
+    this.hasClaimedCurrentGame = false;
     this.clearRecommendations();
     this.updateBoard(true);
   }
@@ -596,11 +619,7 @@ class ChessApp {
 
       if (this.game.isCheckmate()) {
         sounds.playCheckmate();
-        const loserTurn = this.game.turn();
-        const playerWon = (loserTurn !== this.playerColor);
-        if (playerWon) {
-          this.recordVictory();
-        }
+        this.verifyAndClaimCheckmateVictory();
       } else if (this.game.inCheck()) {
         sounds.playCheck();
       } else if (move.captured) {

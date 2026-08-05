@@ -76,8 +76,8 @@
           </select>
           <span id="user-display-name" class="user-name-text">Player</span>
           <div class="win-count-pill">
-            🏆 Won: <span id="stat-games-won">0</span>
-            <span class="win-rate-text">(<span id="stat-win-rate">0</span>%)</span>
+            ⚡ <span id="stat-elo-rating">1200</span> ELO
+            <span class="win-rate-text">(🏆 <span id="stat-games-won">0</span> W)</span>
           </div>
         </div>
         <button id="btn-user-logout" class="btn btn-logout" title="Logout">
@@ -97,7 +97,7 @@
 
       <div class="modal-body" style="text-align: center;">
         <p class="modal-description" style="margin-bottom: 24px;">
-          Sign in with your Google account to automatically auto-detect your nationality and track your wins on the worldwide leaderboard!
+          Sign in with your Google account to track your ELO rating and verified victories on the worldwide leaderboard!
         </p>
 
         <!-- Official Native Google Sign-In Container -->
@@ -232,16 +232,16 @@
         </div>
       </div>
 
-      <!-- Quick Action Controls & Victory Claim -->
+      <!-- Quick Action Controls & Anti-Cheat Fair Play Tracker -->
       <div class="card controls-card">
         <div class="card-header">
           <span class="card-icon">🕹️</span>
-          <h2>Quick Controls & Win Tracker</h2>
+          <h2>Quick Controls & Fair Play System</h2>
         </div>
         <div class="card-body grid-buttons">
-          <button id="btn-claim-victory" class="btn btn-success" style="grid-column: span 2; background: linear-gradient(135deg, #00e676 0%, #00b0ff 100%); color: #0f172a; font-weight: 800; border: none; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);">
-            🏆 Record Victory (+1 Win)
-          </button>
+          <div style="grid-column: span 3; background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: 700; color: #00e676; text-align: center;">
+            🛡️ Anti-Cheat Verified: Wins & +25 ELO are automatically awarded on Checkmate!
+          </div>
           <button id="btn-new-game" class="btn btn-primary">New Game</button>
           <button id="btn-undo" class="btn btn-secondary">Undo Move</button>
           <button id="btn-flip" class="btn btn-secondary">Flip Board</button>
