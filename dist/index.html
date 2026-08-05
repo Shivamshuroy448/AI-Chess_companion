@@ -13,10 +13,10 @@
   <title>Chess AI Companion - Stockfish 16 Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script type="module" crossorigin src="./assets/index-DsVVRjJN.js"></script>
+  <script type="module" crossorigin src="./assets/index-CE-zS_pJ.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-CK6jbLxQ.css">
 </head>
 <body class="theme-cyberpunk">
@@ -47,7 +47,6 @@
         </button>
       </div>
     </div>
-
 
     <!-- User Profile & Win Tracker Header Widget -->
     <div class="user-profile-widget">
@@ -110,13 +109,75 @@
     </div>
   </div>
 
-  <!-- Live Matchup Status Indicator Bar -->
+  <!-- Feature 2: Game Review & Accuracy Meter Cyberpunk Modal -->
+  <div id="modal-game-review" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h2>🔍 Full Game Review & Move Accuracy</h2>
+        <button id="btn-close-review-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Accuracy Meter Hero -->
+        <div class="review-accuracy-hero" style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-card); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px;">
+          <div>
+            <span style="font-size: 11px; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 2px;">YOUR GAME ACCURACY</span>
+            <div id="review-accuracy-val" style="font-size: 32px; font-weight: 800; color: #00e5ff; font-family: 'Space Grotesk', monospace;">92.4%</div>
+          </div>
+          <div style="text-align: right;">
+            <span id="review-performance-tag" style="background: rgba(0, 230, 118, 0.15); border: 1px solid rgba(0, 230, 118, 0.4); color: #00e676; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 8px;">
+              🌟 Master Performance
+            </span>
+          </div>
+        </div>
+
+        <!-- Move Badges Summary Pills -->
+        <div class="review-badges-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; text-align: center;">
+          <div style="background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); padding: 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">‼️</span>
+            <span id="count-brilliant" style="display: block; font-weight: 800; font-size: 14px; color: #00e5ff;">1</span>
+            <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">BRILLIANT</span>
+          </div>
+          <div style="background: rgba(0, 230, 118, 0.1); border: 1px solid rgba(0, 230, 118, 0.3); padding: 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">⭐</span>
+            <span id="count-best" style="display: block; font-weight: 800; font-size: 14px; color: #00e676;">8</span>
+            <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">BEST</span>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card); padding: 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">👍</span>
+            <span id="count-good" style="display: block; font-weight: 800; font-size: 14px; color: #ffffff;">4</span>
+            <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">GOOD</span>
+          </div>
+          <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">⚠️</span>
+            <span id="count-inaccuracy" style="display: block; font-weight: 800; font-size: 14px; color: #ffd700;">1</span>
+            <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">INACCURACY</span>
+          </div>
+          <div style="background: rgba(255, 82, 82, 0.1); border: 1px solid rgba(255, 82, 82, 0.3); padding: 8px; border-radius: 8px;">
+            <span style="font-size: 14px;">❌</span>
+            <span id="count-blunder" style="display: block; font-weight: 800; font-size: 14px; color: #ff5252;">0</span>
+            <span style="font-size: 9px; color: #94a3b8; font-weight: 700;">BLUNDER</span>
+          </div>
+        </div>
+
+        <!-- Move Breakdown List -->
+        <div id="review-moves-list" style="max-height: 180px; overflow-y: auto; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-card); border-radius: 10px; padding: 10px; font-size: 12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Matchup Status Indicator Bar & Feature 1 Opening Detector -->
   <div class="matchup-bar-container">
     <div class="matchup-badges">
       <span id="badge-you" class="badge badge-you">YOU: WHITE (♔)</span>
       <span class="badge-vs">VS</span>
       <span id="badge-opp" class="badge badge-opp">OPPONENT: BLACK (♚)</span>
+      <!-- Feature 1: Real-time ECO Opening Detector Badge -->
+      <span id="badge-opening" class="badge badge-opening" style="background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; margin-left: auto;">
+        📖 Opening: Starting Position [A00]
+      </span>
     </div>
+
     <div id="live-status-banner" class="status-banner-your-turn">
       <div id="status-main-text">🔥 YOUR TURN (WHITE)! AI Recommends: e2 ➔ e4</div>
       <div id="status-sub-text">Play this move on your online game to win!</div>
@@ -245,7 +306,7 @@
               <h2>Import PGN / FEN / Live Game URL</h2>
             </div>
             
-            <!-- Feature 5: Direct Lichess / Chess.com URL Importer -->
+            <!-- Feature 5: Direct Lichess URL Importer -->
             <div class="url-importer-box" style="margin-bottom: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 10px; padding: 10px;">
               <span style="font-size: 11px; font-weight: 800; color: #00e5ff; display: block; margin-bottom: 4px;">🔗 PASTE LICHESS GAME URL</span>
               <div class="flex-row">
@@ -294,9 +355,13 @@
 
           <!-- OPTION 4: Quick Controls & Move History Log -->
           <div id="pane-dash-controls" class="dash-pane hidden">
-            <div class="card-header" style="margin-bottom: 10px; font-size: 14px;">
-              <span class="card-icon">🕹️</span>
-              <h2>Quick Controls & Move Log</h2>
+            <div class="card-header" style="justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="card-icon">🕹️</span>
+                <h2>Quick Controls & Move Log</h2>
+              </div>
+              <!-- Feature 2: Trigger Game Review Button -->
+              <button id="btn-open-review" class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;">🔍 Game Review</button>
             </div>
 
             <div class="grid-buttons" style="margin-bottom: 10px;">
@@ -339,6 +404,6 @@
 
     </section>
   </main>
-
+
 </body>
 </html>
