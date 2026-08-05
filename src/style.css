@@ -229,44 +229,16 @@ body {
   border: 1px solid rgba(0, 229, 255, 0.3);
 }
 
-/* Top Controls & AI Recommendation Bar */
-.top-controls-bar {
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto 12px auto;
-  padding: 0 24px;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .top-controls-bar {
-    grid-template-columns: 1fr;
-  }
-}
-
-.top-card {
-  margin: 0 !important;
-}
-
-.inline-switches {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 16px !important;
-}
-
-/* Main Workspace - Left Fixed Board + Right Internal Scrollable Panel */
+/* Main Workspace - Chessboard + 3-Tab Switchable Side Panel */
 .app-workspace {
   flex: 1;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 24px 20px 24px;
+  padding: 14px 24px;
   display: grid;
-  grid-template-columns: minmax(480px, 520px) 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(500px, 540px) 1fr;
+  gap: 24px;
   align-items: start;
 }
 
@@ -276,20 +248,6 @@ body {
   }
 }
 
-.scrollable-side-panel {
-  max-height: 580px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.scrollable-side-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollable-side-panel::-webkit-scrollbar-thumb {
-  background: rgba(0, 229, 255, 0.3);
-  border-radius: 6px;
-}
 
 
 
