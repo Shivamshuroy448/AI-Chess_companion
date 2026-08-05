@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates PGN Importer, Stockfish 16 Engine, User Auth & Win Tracker.
+ * Integrates PGN Importer, Stockfish 16 Engine, Email/Password Auth & Win Tracker.
  */
 
 import { Chess } from 'chess.js';
@@ -26,7 +26,7 @@ class ChessApp {
     this.updateBoard(true);
   }
 
-  /* --- User Session & Win Tracker --- */
+  /* --- User Session & Email/Password Auth --- */
 
   initUserSession() {
     const saved = localStorage.getItem('chess_user_session');
@@ -43,10 +43,12 @@ class ChessApp {
   saveUserSession() {
     if (this.currentUser) {
       localStorage.setItem('chess_user_session', JSON.stringify(this.currentUser));
-      // Save global user dictionary for persistent usernames
-      const usersDict = JSON.parse(localStorage.getItem('chess_users_db') || '{}');
-      usersDict[this.currentUser.username] = this.currentUser;
-      localStorage.setItem('chess_users_db', JSON.stringify(usersDict));
+      // Save to global user database keyed by email
+      const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
+      if (this.currentUser.email) {
+        usersDb[this.currentUser.email.toLowerCase()] = this.currentUser;
+        localStorage.setItem('chess_users_db_v2', JSON.stringify(usersDb));
+      }
     } else {
       localStorage.removeItem('chess_user_session');
     }
@@ -64,7 +66,7 @@ class ChessApp {
       loggedOutView?.classList.add('hidden');
       loggedInView?.classList.remove('hidden');
 
-      if (nameEl) nameEl.textContent = this.currentUser.username;
+      if (nameEl) nameEl.textContent = this.currentUser.username || this.currentUser.email;
       if (wonEl) wonEl.textContent = this.currentUser.gamesWon || 0;
 
       const played = this.currentUser.gamesPlayed || 0;
@@ -77,31 +79,65 @@ class ChessApp {
     }
   }
 
-  loginUser(username) {
+  registerUser(username, email, password, confirmPassword) {
     const cleanName = username ? username.trim() : '';
-    if (!cleanName) return;
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const cleanPass = password ? password.trim() : '';
 
-    // Fetch existing user data or initialize new profile
-    const usersDict = JSON.parse(localStorage.getItem('chess_users_db') || '{}');
-    const existing = usersDict[cleanName];
+    if (!cleanName) return { success: false, msg: 'Please enter a player username.' };
+    if (!cleanEmail || !cleanEmail.includes('@')) return { success: false, msg: 'Please enter a valid email address.' };
+    if (!cleanPass || cleanPass.length < 6) return { success: false, msg: 'Password must be at least 6 characters long.' };
+    if (cleanPass !== confirmPassword) return { success: false, msg: 'Passwords do not match!' };
 
-    if (existing) {
-      this.currentUser = existing;
-    } else {
-      this.currentUser = {
-        username: cleanName,
-        gamesWon: 0,
-        gamesPlayed: 0,
-        createdAt: new Date().toISOString()
-      };
+    const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
+    if (usersDb[cleanEmail]) {
+      return { success: false, msg: 'An account with this email already exists! Please log in.' };
     }
 
+    const newUser = {
+      username: cleanName,
+      email: cleanEmail,
+      password: cleanPass, // Saved in local user DB
+      gamesWon: 0,
+      gamesPlayed: 0,
+      createdAt: new Date().toISOString()
+    };
+
+    usersDb[cleanEmail] = newUser;
+    localStorage.setItem('chess_users_db_v2', JSON.stringify(usersDb));
+
+    this.currentUser = newUser;
     this.saveUserSession();
-    this.showToast(`👋 Welcome back, ${cleanName}! Win tracker active.`);
+    this.showToast(`✨ Account created! Welcome, ${cleanName}.`);
+    return { success: true };
+  }
+
+  loginUser(email, password) {
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const cleanPass = password ? password.trim() : '';
+
+    if (!cleanEmail || !cleanEmail.includes('@')) return { success: false, msg: 'Please enter a valid email address.' };
+    if (!cleanPass) return { success: false, msg: 'Please enter your password.' };
+
+    const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
+    const user = usersDb[cleanEmail];
+
+    if (!user) {
+      return { success: false, msg: 'No account found with this email. Please sign up!' };
+    }
+
+    if (user.password !== cleanPass) {
+      return { success: false, msg: 'Incorrect password! Please try again.' };
+    }
+
+    this.currentUser = user;
+    this.saveUserSession();
+    this.showToast(`👋 Welcome back, ${user.username}! Win tracker active.`);
+    return { success: true };
   }
 
   logoutUser() {
-    const oldName = this.currentUser ? this.currentUser.username : '';
+    const oldName = this.currentUser ? (this.currentUser.username || this.currentUser.email) : '';
     this.currentUser = null;
     this.saveUserSession();
     this.showToast(`🚪 Logged out ${oldName}. Guest mode active.`);
@@ -109,9 +145,9 @@ class ChessApp {
 
   recordVictory() {
     if (!this.currentUser) {
-      // Create guest profile if claiming win while logged out
       this.currentUser = {
         username: 'Guest Player',
+        email: 'guest@local',
         gamesWon: 1,
         gamesPlayed: 1,
         createdAt: new Date().toISOString()
@@ -129,18 +165,51 @@ class ChessApp {
   /* --- UI Event Listeners --- */
 
   initUI() {
-    // Auth Modal Listeners
+    // Auth Modal Elements
     const modalLogin = document.getElementById('modal-login');
     const btnOpenLogin = document.getElementById('btn-open-login');
     const btnCloseModal = document.getElementById('btn-close-modal');
+
+    const tabBtnLogin = document.getElementById('tab-btn-login');
+    const tabBtnRegister = document.getElementById('tab-btn-register');
+    const formLogin = document.getElementById('auth-form-login');
+    const formRegister = document.getElementById('auth-form-register');
+
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const loginErr = document.getElementById('login-error-msg');
     const btnSubmitLogin = document.getElementById('btn-submit-login');
-    const inputUsername = document.getElementById('input-username');
+
+    const regUsername = document.getElementById('reg-username');
+    const regEmail = document.getElementById('reg-email');
+    const regPassword = document.getElementById('reg-password');
+    const regConfirmPass = document.getElementById('reg-confirm-password');
+    const regErr = document.getElementById('reg-error-msg');
+    const btnSubmitRegister = document.getElementById('btn-submit-register');
+
     const btnLogout = document.getElementById('btn-user-logout');
     const btnClaimVictory = document.getElementById('btn-claim-victory');
 
+    // Tab Switcher Handlers
+    tabBtnLogin?.addEventListener('click', () => {
+      tabBtnLogin.classList.add('active');
+      tabBtnRegister?.classList.remove('active');
+      formLogin?.classList.remove('hidden');
+      formRegister?.classList.add('hidden');
+    });
+
+    tabBtnRegister?.addEventListener('click', () => {
+      tabBtnRegister.classList.add('active');
+      tabBtnLogin?.classList.remove('active');
+      formRegister?.classList.remove('hidden');
+      formLogin?.classList.add('hidden');
+    });
+
     btnOpenLogin?.addEventListener('click', () => {
       modalLogin?.classList.remove('hidden');
-      inputUsername?.focus();
+      if (loginErr) loginErr.classList.add('hidden');
+      if (regErr) regErr.classList.add('hidden');
+      loginEmail?.focus();
     });
 
     btnCloseModal?.addEventListener('click', () => {
@@ -151,25 +220,59 @@ class ChessApp {
       if (e.target === modalLogin) modalLogin.classList.add('hidden');
     });
 
+    // Login Submission Handler
     const handleLoginSubmit = () => {
-      const username = inputUsername?.value;
-      if (username) {
-        this.loginUser(username);
+      if (loginErr) loginErr.classList.add('hidden');
+      const email = loginEmail?.value;
+      const pass = loginPassword?.value;
+
+      const res = this.loginUser(email, pass);
+      if (res.success) {
         modalLogin?.classList.add('hidden');
-        if (inputUsername) inputUsername.value = '';
+        if (loginEmail) loginEmail.value = '';
+        if (loginPassword) loginPassword.value = '';
       } else {
-        alert('Please enter a username to sign in!');
+        if (loginErr) {
+          loginErr.textContent = `⚠️ ${res.msg}`;
+          loginErr.classList.remove('hidden');
+        }
       }
     };
 
     btnSubmitLogin?.addEventListener('click', handleLoginSubmit);
-
-    inputUsername?.addEventListener('keydown', (e) => {
+    loginPassword?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleLoginSubmit();
     });
 
-    btnLogout?.addEventListener('click', () => this.logoutUser());
+    // Register Submission Handler
+    const handleRegisterSubmit = () => {
+      if (regErr) regErr.classList.add('hidden');
+      const uname = regUsername?.value;
+      const email = regEmail?.value;
+      const pass = regPassword?.value;
+      const confirmPass = regConfirmPass?.value;
 
+      const res = this.registerUser(uname, email, pass, confirmPass);
+      if (res.success) {
+        modalLogin?.classList.add('hidden');
+        if (regUsername) regUsername.value = '';
+        if (regEmail) regEmail.value = '';
+        if (regPassword) regPassword.value = '';
+        if (regConfirmPass) regConfirmPass.value = '';
+      } else {
+        if (regErr) {
+          regErr.textContent = `⚠️ ${res.msg}`;
+          regErr.classList.remove('hidden');
+        }
+      }
+    };
+
+    btnSubmitRegister?.addEventListener('click', handleRegisterSubmit);
+    regConfirmPass?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleRegisterSubmit();
+    });
+
+    btnLogout?.addEventListener('click', () => this.logoutUser());
     btnClaimVictory?.addEventListener('click', () => this.recordVictory());
 
     // Color & Board Control Listeners
@@ -385,7 +488,6 @@ class ChessApp {
 
       if (this.game.isCheckmate()) {
         sounds.playCheckmate();
-        // Check if player won
         const loserTurn = this.game.turn();
         const playerWon = (loserTurn !== this.playerColor);
         if (playerWon) {

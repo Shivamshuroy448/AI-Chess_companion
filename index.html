@@ -64,25 +64,66 @@
     </div>
   </header>
 
-  <!-- Login / Register Cyberpunk Modal -->
+  <!-- Login & Register Cyberpunk Modal -->
   <div id="modal-login" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>🔑 Player Login & Win Tracker</h2>
+        <h2>🔑 Player Account & Win Tracker</h2>
         <button id="btn-close-modal" class="modal-close-btn">&times;</button>
       </div>
-      <div class="modal-body">
+      
+      <!-- Tab Switcher -->
+      <div class="auth-tabs">
+        <button id="tab-btn-login" class="auth-tab-btn active">Login</button>
+        <button id="tab-btn-register" class="auth-tab-btn">Sign Up / Register</button>
+      </div>
+
+      <!-- Login Form View -->
+      <div id="auth-form-login" class="modal-body">
         <p class="modal-description">
-          Sign in with your username to automatically track your wins, games played, and win rate statistics!
+          Sign in with your registered email and password to sync your win rate statistics.
         </p>
         <div class="form-group">
-          <label for="input-username">ENTER YOUR USERNAME</label>
-          <input type="text" id="input-username" placeholder="e.g. Grandmaster123" class="custom-input" autocomplete="off" />
+          <label for="login-email">EMAIL ADDRESS</label>
+          <input type="email" id="login-email" placeholder="user@example.com" class="custom-input" autocomplete="username" />
         </div>
+        <div class="form-group">
+          <label for="login-password">PASSWORD</label>
+          <input type="password" id="login-password" placeholder="••••••••" class="custom-input" autocomplete="current-password" />
+        </div>
+        <div id="login-error-msg" class="auth-error-msg hidden"></div>
         <button id="btn-submit-login" class="btn btn-primary btn-full-width">
-          ⚡ Login & Start Tracking Wins
+          ⚡ Login & Load Profile
         </button>
       </div>
+
+      <!-- Register Form View -->
+      <div id="auth-form-register" class="modal-body hidden">
+        <p class="modal-description">
+          Create a new player account with email and password to track wins.
+        </p>
+        <div class="form-group">
+          <label for="reg-username">PLAYER USERNAME</label>
+          <input type="text" id="reg-username" placeholder="e.g. Grandmaster123" class="custom-input" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="reg-email">EMAIL ADDRESS</label>
+          <input type="email" id="reg-email" placeholder="user@example.com" class="custom-input" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">PASSWORD (Min 6 chars)</label>
+          <input type="password" id="reg-password" placeholder="••••••••" class="custom-input" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm-password">CONFIRM PASSWORD</label>
+          <input type="password" id="reg-confirm-password" placeholder="••••••••" class="custom-input" autocomplete="new-password" />
+        </div>
+        <div id="reg-error-msg" class="auth-error-msg hidden"></div>
+        <button id="btn-submit-register" class="btn btn-primary btn-full-width">
+          ✨ Create Account & Start Tracking Wins
+        </button>
+      </div>
+
     </div>
   </div>
 
