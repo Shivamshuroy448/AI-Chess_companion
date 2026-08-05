@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Chess.com/Lichess Live Game Importer.
+ * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Bulletproof Chess.com/Lichess Live Game Importer.
  */
 
 import { Chess } from 'chess.js';
@@ -744,15 +744,20 @@ class ChessApp {
   }
 
   async fetchLiveGameFromUrl(urlOrId) {
+    if (!urlOrId || typeof urlOrId !== 'string') return;
     const str = urlOrId.trim();
+
+    // Regex to extract 9 to 12 digit Game ID from any duplicate/pasted string
+    const idMatch = str.match(/(\d{9,12})/);
+    const gameId = idMatch ? idMatch[1] : null;
 
     // 1. Lichess URL
     if (str.includes('lichess.org/')) {
       const parts = str.split('lichess.org/');
-      const gameId = parts[1].split('/')[0].slice(0, 8);
+      const lichessId = parts[1].split('/')[0].slice(0, 8);
       try {
-        this.showToast(`🔍 Fetching live game PGN from Lichess (${gameId})...`);
-        const response = await fetch(`https://lichess.org/game/export/${gameId}?evals=false&clocks=false`);
+        this.showToast(`🔍 Fetching live game PGN from Lichess (${lichessId})...`);
+        const response = await fetch(`https://lichess.org/game/export/${lichessId}?evals=false&clocks=false`);
         if (response.ok) {
           const pgnText = await response.text();
           const pgnArea = document.getElementById('input-pgn-text');
@@ -765,34 +770,36 @@ class ChessApp {
     }
 
     // 2. Chess.com URL or Game ID
-    if (str.includes('chess.com') || /^\d+$/.test(str)) {
-      const match = str.match(/(\d{7,})/);
-      if (match && match[1]) {
-        const gameId = match[1];
-        try {
-          this.showToast(`🔍 Fetching live game PGN from Chess.com API (${gameId})...`);
+    if (gameId) {
+      try {
+        this.showToast(`🔍 Fetching game ${gameId} from Chess.com...`);
 
-          let response = await fetch(`https://api.chess.com/pub/game/live/${gameId}`);
-          if (!response.ok) {
-            response = await fetch(`https://api.chess.com/pub/game/daily/${gameId}`);
-          }
+        const urlsToTry = [
+          `https://api.chess.com/pub/game/live/${gameId}`,
+          `https://api.chess.com/pub/game/daily/${gameId}`,
+          `https://corsproxy.io/?${encodeURIComponent(`https://api.chess.com/pub/game/live/${gameId}`)}`
+        ];
 
-          if (response.ok) {
-            const data = await response.json();
-            const pgnContent = data.pgn || (data.game && data.game.pgn);
-            if (pgnContent) {
-              const pgnArea = document.getElementById('input-pgn-text');
-              if (pgnArea) pgnArea.value = pgnContent;
-              this.loadMoveNotation(pgnContent);
-              this.showToast(`✨ Live Chess.com game imported successfully!`);
-              return;
+        for (const targetUrl of urlsToTry) {
+          try {
+            const res = await fetch(targetUrl);
+            if (res.ok) {
+              const data = await res.json();
+              const pgnContent = data.pgn || (data.game && data.game.pgn);
+              if (pgnContent) {
+                const pgnArea = document.getElementById('input-pgn-text');
+                if (pgnArea) pgnArea.value = pgnContent;
+                this.loadMoveNotation(pgnContent);
+                this.showToast(`✨ Live Chess.com game (${gameId}) imported successfully!`);
+                return;
+              }
             }
-          }
-        } catch (e) {}
-      }
+          } catch (err1) {}
+        }
+      } catch (e) {}
     }
 
-    this.showToast('⚠️ Could not auto-fetch game from URL. Copy PGN move text directly into box!');
+    this.showToast('⚠️ Could not auto-fetch from URL. Copy PGN move text directly into box!');
   }
 
   loadMoveNotation(moveText) {
