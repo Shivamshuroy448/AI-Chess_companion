@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
   <!-- Google Identity Services SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script type="module" crossorigin src="./assets/index-FKqLpk_W.js"></script>
+  <script type="module" crossorigin src="./assets/index-CE-zS_pJ.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-CK6jbLxQ.css">
 </head>
 <body class="theme-cyberpunk">
@@ -156,19 +156,8 @@
   <!-- Live Matchup Status Indicator Bar & Feature 1 Opening Detector -->
   <div class="matchup-bar-container">
     <div class="matchup-badges">
-      <!-- Active Color Selection Bar (WHO ARE YOU PLAYING AS?) moved to Left above Board -->
-      <div class="color-picker-group">
-        <span class="picker-label">WHO ARE YOU PLAYING AS?</span>
-        <div class="color-btn-toggle">
-          <button id="btn-color-white" class="color-btn active" title="Play as White">
-            <span class="color-icon">♔</span> YOU ARE WHITE
-          </button>
-          <button id="btn-color-black" class="color-btn" title="Play as Black">
-            <span class="color-icon">♚</span> YOU ARE BLACK
-          </button>
-        </div>
-      </div>
-
+      <span id="badge-you" class="badge badge-you">YOU: WHITE (♔)</span>
+      <span class="badge-vs">VS</span>
       <span id="badge-opp" class="badge badge-opp">OPPONENT: BLACK (♚)</span>
       <!-- Feature 1: Real-time ECO Opening Detector Badge -->
       <span id="badge-opening" class="badge badge-opening" style="background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.4); color: #ffd700; margin-left: auto;">
@@ -188,6 +177,20 @@
     <!-- Left: Fixed Chessboard & Eval Bar Container -->
     <section class="board-column">
       <div class="board-container-wrapper">
+
+        <!-- Active Color Selection Bar (WHO ARE YOU PLAYING AS?) moved to Far Left side of Board -->
+        <div class="color-picker-group vertical-picker" style="display: flex; flex-direction: column; justify-content: center; gap: 8px; margin-right: 4px;">
+          <span class="picker-label" style="font-size: 9px; font-weight: 800; color: #94a3b8; letter-spacing: 0.5px; text-align: center;">WHO ARE YOU PLAYING AS?</span>
+          <div class="color-btn-toggle" style="display: flex; flex-direction: column; gap: 8px; width: 115px;">
+            <button id="btn-color-white" class="color-btn active" title="Play as White" style="padding: 10px 8px; font-size: 11px; justify-content: center;">
+              <span class="color-icon">♔</span> YOU ARE WHITE
+            </button>
+            <button id="btn-color-black" class="color-btn" title="Play as Black" style="padding: 10px 8px; font-size: 11px; justify-content: center;">
+              <span class="color-icon">♚</span> YOU ARE BLACK
+            </button>
+          </div>
+        </div>
+
         <!-- Evaluation Bar -->
         <div class="eval-bar-wrapper">
           <div class="eval-bar">
