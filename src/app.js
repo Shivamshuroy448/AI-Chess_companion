@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth & Win Tracker.
+ * Integrates Stockfish 16 Engine, Google OAuth & Win Tracker with Enterprise XSS & Input Defense.
  */
 
 import { Chess } from 'chess.js';
@@ -26,6 +26,18 @@ class ChessApp {
     this.initUI();
     this.initPgnImporter();
     this.updateBoard(true);
+  }
+
+  /* --- Security & XSS Sanitization Helpers --- */
+
+  escapeHtml(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   /* --- User Session & Google Auth --- */
@@ -92,14 +104,17 @@ class ChessApp {
     const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
     const existing = usersDb[cleanEmail];
 
+    const safeName = this.escapeHtml(name);
+    const safeEmail = this.escapeHtml(cleanEmail);
+
     if (existing) {
       existing.picture = pictureUrl || existing.picture;
-      existing.username = name || existing.username;
+      existing.username = safeName || existing.username;
       this.currentUser = existing;
     } else {
       this.currentUser = {
-        username: name || 'Google User',
-        email: cleanEmail,
+        username: safeName || 'Google User',
+        email: safeEmail,
         picture: pictureUrl,
         provider: 'google',
         gamesWon: 0,
@@ -190,7 +205,6 @@ class ChessApp {
   /* --- UI Event Listeners --- */
 
   initUI() {
-    // Auth Modal Elements
     const modalLogin = document.getElementById('modal-login');
     const btnOpenLogin = document.getElementById('btn-open-login');
     const btnCloseModal = document.getElementById('btn-close-modal');
@@ -200,7 +214,6 @@ class ChessApp {
     btnOpenLogin?.addEventListener('click', () => {
       modalLogin?.classList.remove('hidden');
 
-      // Re-render Google button when modal opens
       const target = document.getElementById('google-signin-btn-target');
       if (window.google && window.google.accounts && target) {
         window.google.accounts.id.renderButton(target, {
@@ -226,7 +239,6 @@ class ChessApp {
     btnLogout?.addEventListener('click', () => this.logoutUser());
     btnClaimVictory?.addEventListener('click', () => this.recordVictory());
 
-    // Color & Board Control Listeners
     const btnWhite = document.getElementById('btn-color-white');
     const btnBlack = document.getElementById('btn-color-black');
 
@@ -338,7 +350,7 @@ class ChessApp {
       this.updateBoard(true);
       this.showToast(`✨ Loaded ${this.game.history().length} moves! Current position ready.`);
     } catch (err) {
-      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nc3');
+      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nf3');
     }
   }
 
@@ -510,8 +522,8 @@ class ChessApp {
 
     if (isYourTurn) {
       banner.className = 'status-banner-your-turn';
-      const moveStr = evalResult.san ? `${evalResult.from} ➔ ${evalResult.to} (${evalResult.san})` : `${evalResult.from} ➔ ${evalResult.to}`;
-      const engineSrc = evalResult.source || 'Stockfish 16 Engine';
+      const moveStr = evalResult.san ? `${this.escapeHtml(evalResult.from)} ➔ ${this.escapeHtml(evalResult.to)} (${this.escapeHtml(evalResult.san)})` : `${this.escapeHtml(evalResult.from)} ➔ ${this.escapeHtml(evalResult.to)}`;
+      const engineSrc = this.escapeHtml(evalResult.source || 'Stockfish 16 Engine');
       mainText.innerHTML = `🔥 YOUR TURN (${yourColorName})! AI Recommends: <span id="status-recommended-move">${moveStr}</span>`;
       subText.textContent = `Powered by ${engineSrc}. Play this move online to win!`;
     } else {
@@ -557,8 +569,8 @@ class ChessApp {
 
     for (let i = 0; i < history.length; i += 2) {
       const moveNum = Math.floor(i / 2) + 1;
-      const whiteMove = history[i] || '';
-      const blackMove = history[i + 1] || '';
+      const whiteMove = this.escapeHtml(history[i] || '');
+      const blackMove = this.escapeHtml(history[i + 1] || '');
 
       html += `
         <div class="move-row">
