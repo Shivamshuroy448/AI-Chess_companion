@@ -1,12 +1,13 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth, Anti-Cheat ELO System & Guest Blur Security Overlay.
+ * Integrates Stockfish 16 Engine, Google OAuth, Win Odds Bar, Digital Blitz Clock, Daily Puzzles & Lichess Game Importer.
  */
 
 import { Chess } from 'chess.js';
 import { BoardRenderer } from './boardRenderer.js';
 import { engine } from './stockfishEngine.js';
 import { sounds } from './soundEffects.js';
+import { PUZZLES } from './puzzles.js';
 
 class ChessApp {
   constructor() {
@@ -18,11 +19,23 @@ class ChessApp {
     // Anti-Cheat Session State
     this.hasClaimedCurrentGame = false;
 
+    // Feature 3: Digital Chess Clock State
+    this.clockTimeSec = 180; // 3 min default
+    this.whiteTime = 180;
+    this.blackTime = 180;
+    this.clockTimer = null;
+    this.isClockRunning = false;
+
+    // Feature 4: Daily Puzzle State
+    this.currentPuzzleIndex = 0;
+    this.activePuzzle = null;
+    this.puzzleStepIndex = 0;
+
     // User session & win tracker state
     this.currentUser = null;
     this.googleClientId = '658722838654-ie4ffiu8452lfk56gv28ogl8jpvt7a0i.apps.googleusercontent.com';
 
-    // Global Leaderboard Mock Master Database (Sorted by ELO Rating)
+    // Global Leaderboard Mock Master Database
     this.globalLeaderboard = [
       { name: 'Magnus C.', flag: '🇳🇴', elo: 2850, wins: 482, rate: '92%' },
       { name: 'Hikaru N.', flag: '🇺🇸', elo: 2800, wins: 415, rate: '89%' },
@@ -45,6 +58,8 @@ class ChessApp {
     this.initLeaderboardUI();
     this.initDashboardTabs();
     this.initPgnImporter();
+    this.initChessClock();
+    this.initPuzzleSystem();
     this.updateBoard(true);
     this.startGlobalTicker();
   }
@@ -75,20 +90,190 @@ class ChessApp {
     return flagMap[code] || '🇮🇳';
   }
 
-  /* --- 3-Tab Switchable Side Panel Navigation --- */
+  /* --- Feature 3: Integrated Digital Chess Clock --- */
+
+  initChessClock() {
+    const selectClock = document.getElementById('select-clock-time');
+    const btnToggle = document.getElementById('btn-clock-toggle');
+    const btnReset = document.getElementById('btn-clock-reset');
+
+    selectClock?.addEventListener('change', (e) => {
+      this.clockTimeSec = parseInt(e.target.value, 10);
+      this.resetClock();
+    });
+
+    btnToggle?.addEventListener('click', () => {
+      if (this.isClockRunning) {
+        this.pauseClock();
+      } else {
+        this.startClock();
+      }
+    });
+
+    btnReset?.addEventListener('click', () => this.resetClock());
+    this.updateClockDisplay();
+  }
+
+  startClock() {
+    if (this.clockTimeSec <= 0) return;
+    this.isClockRunning = true;
+    const btnToggle = document.getElementById('btn-clock-toggle');
+    if (btnToggle) btnToggle.textContent = '⏸ Pause';
+
+    if (this.clockTimer) clearInterval(this.clockTimer);
+
+    this.clockTimer = setInterval(() => {
+      const turn = this.game.turn();
+      if (turn === 'w') {
+        this.whiteTime--;
+        if (this.whiteTime <= 0) {
+          this.pauseClock();
+          sounds.playCheck();
+          this.showToast('⏱ Time Out! Black wins on time.');
+        }
+      } else {
+        this.blackTime--;
+        if (this.blackTime <= 0) {
+          this.pauseClock();
+          sounds.playCheck();
+          this.showToast('⏱ Time Out! White wins on time.');
+        }
+      }
+      this.updateClockDisplay();
+    }, 1000);
+  }
+
+  pauseClock() {
+    this.isClockRunning = false;
+    if (this.clockTimer) clearInterval(this.clockTimer);
+    const btnToggle = document.getElementById('btn-clock-toggle');
+    if (btnToggle) btnToggle.textContent = '▶ Start';
+  }
+
+  resetClock() {
+    this.pauseClock();
+    this.whiteTime = this.clockTimeSec;
+    this.blackTime = this.clockTimeSec;
+    this.updateClockDisplay();
+  }
+
+  updateClockDisplay() {
+    const elWhite = document.getElementById('timer-white');
+    const elBlack = document.getElementById('timer-black');
+
+    const format = (sec) => {
+      if (sec <= 0) return '00:00';
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    if (elWhite) elWhite.textContent = format(this.whiteTime);
+    if (elBlack) elBlack.textContent = format(this.blackTime);
+
+    const turn = this.game.turn();
+    const boxWhite = elWhite?.parentElement;
+    const boxBlack = elBlack?.parentElement;
+
+    if (turn === 'w') {
+      boxWhite?.classList.add('active');
+      boxBlack?.classList.remove('active');
+    } else {
+      boxBlack?.classList.add('active');
+      boxWhite?.classList.remove('active');
+    }
+  }
+
+  /* --- Feature 4: Daily Tactical Puzzles --- */
+
+  initPuzzleSystem() {
+    const btnStart = document.getElementById('btn-start-puzzle');
+    const btnNext = document.getElementById('btn-next-puzzle');
+
+    btnStart?.addEventListener('click', () => this.loadActivePuzzle());
+    btnNext?.addEventListener('click', () => {
+      this.currentPuzzleIndex = (this.currentPuzzleIndex + 1) % PUZZLES.length;
+      this.renderPuzzleMeta();
+    });
+
+    this.renderPuzzleMeta();
+  }
+
+  renderPuzzleMeta() {
+    const puzzle = PUZZLES[this.currentPuzzleIndex];
+    this.activePuzzle = puzzle;
+
+    const titleEl = document.getElementById('puzzle-title');
+    const descEl = document.getElementById('puzzle-desc');
+    const statusEl = document.getElementById('puzzle-status-box');
+
+    if (titleEl) titleEl.textContent = puzzle.title;
+    if (descEl) descEl.textContent = puzzle.description;
+    if (statusEl) statusEl.textContent = 'Click "Load Puzzle on Board" to play!';
+  }
+
+  loadActivePuzzle() {
+    if (!this.activePuzzle) return;
+
+    this.game.load(this.activePuzzle.fen);
+    this.playerColor = this.activePuzzle.initialTurn;
+    this.puzzleStepIndex = 0;
+    this.renderer.isFlipped = (this.playerColor === 'b');
+
+    const statusEl = document.getElementById('puzzle-status-box');
+    if (statusEl) statusEl.textContent = `🎯 Puzzle Active! Make move 1 of ${this.activePuzzle.solutionMoves.length}...`;
+
+    this.clearRecommendations();
+    this.updateBoard(true);
+    this.showToast(`🧩 Puzzle Loaded: ${this.activePuzzle.title}`);
+  }
+
+  checkPuzzleMove(moveObj) {
+    if (!this.activePuzzle) return false;
+
+    const moveStr = `${moveObj.from}${moveObj.to}`;
+    const expected = this.activePuzzle.solutionMoves[this.puzzleStepIndex];
+
+    if (moveStr === expected) {
+      this.puzzleStepIndex++;
+      const statusEl = document.getElementById('puzzle-status-box');
+
+      if (this.puzzleStepIndex >= this.activePuzzle.solutionMoves.length) {
+        if (statusEl) statusEl.textContent = '🎉 PUZZLE SOLVED! +15 ELO Earned!';
+        sounds.playCheckmate();
+
+        if (this.currentUser) {
+          this.currentUser.elo = (this.currentUser.elo || 1200) + 15;
+          this.saveUserSession();
+        }
+        this.showToast(`🏆 PUZZLE SOLVED! +15 ELO Bonus Awarded!`);
+      } else {
+        if (statusEl) statusEl.textContent = `✅ Correct move! Make move ${this.puzzleStepIndex + 1}...`;
+      }
+      return true;
+    } else {
+      const statusEl = document.getElementById('puzzle-status-box');
+      if (statusEl) statusEl.textContent = '❌ Incorrect move! Try again.';
+      return false;
+    }
+  }
+
+  /* --- Sub-Tabbed Dashboard Navigation --- */
 
   initDashboardTabs() {
     const tabLead = document.getElementById('btn-dash-tab-lead');
     const tabPgn = document.getElementById('btn-dash-tab-pgn');
+    const tabPuzzle = document.getElementById('btn-dash-tab-puzzle');
     const tabControls = document.getElementById('btn-dash-tab-controls');
 
     const paneLead = document.getElementById('pane-dash-lead');
     const panePgn = document.getElementById('pane-dash-pgn');
+    const panePuzzle = document.getElementById('pane-dash-puzzle');
     const paneControls = document.getElementById('pane-dash-controls');
 
     const activateTab = (activeBtn, activePane) => {
-      [tabLead, tabPgn, tabControls].forEach(btn => btn?.classList.remove('active'));
-      [paneLead, panePgn, paneControls].forEach(pane => pane?.classList.add('hidden'));
+      [tabLead, tabPgn, tabPuzzle, tabControls].forEach(btn => btn?.classList.remove('active'));
+      [paneLead, panePgn, panePuzzle, paneControls].forEach(pane => pane?.classList.add('hidden'));
 
       activeBtn?.classList.add('active');
       activePane?.classList.remove('hidden');
@@ -96,6 +281,7 @@ class ChessApp {
 
     tabLead?.addEventListener('click', () => activateTab(tabLead, paneLead));
     tabPgn?.addEventListener('click', () => activateTab(tabPgn, panePgn));
+    tabPuzzle?.addEventListener('click', () => activateTab(tabPuzzle, panePuzzle));
     tabControls?.addEventListener('click', () => activateTab(tabControls, paneControls));
   }
 
@@ -144,7 +330,6 @@ class ChessApp {
     const overlay = document.getElementById('guest-leaderboard-overlay');
     if (!container) return;
 
-    // Guest Mode Blur Control
     if (!this.currentUser) {
       container.classList.add('blur-guest');
       overlay?.classList.remove('hidden');
@@ -315,7 +500,7 @@ class ChessApp {
     this.renderLeaderboard('top');
     const modalLogin = document.getElementById('modal-login');
     if (modalLogin) modalLogin.classList.add('hidden');
-    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.elo} ELO)! Unlocked Leaderboard.`);
+    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.elo} ELO)!`);
   }
 
   saveUserSession() {
@@ -527,9 +712,18 @@ class ChessApp {
     });
   }
 
+  /* --- Feature 5: Lichess / Chess.com Live Game URL Importer --- */
+
   initPgnImporter() {
     const btnLoadPgn = document.getElementById('btn-load-pgn');
     const pgnArea = document.getElementById('input-pgn-text');
+    const btnLoadUrl = document.getElementById('btn-load-url');
+    const inputUrl = document.getElementById('input-game-url');
+
+    btnLoadUrl?.addEventListener('click', () => {
+      const urlText = inputUrl?.value?.trim();
+      if (urlText) this.fetchLiveGameFromUrl(urlText);
+    });
 
     btnLoadPgn?.addEventListener('click', () => {
       const text = pgnArea?.value;
@@ -538,12 +732,44 @@ class ChessApp {
 
     window.addEventListener('paste', (e) => {
       const text = e.clipboardData?.getData('text');
-      if (text && (text.includes('.') || text.includes('e4') || text.includes('d4') || text.includes('Nf3'))) {
+      if (text && (text.includes('lichess.org') || text.includes('chess.com'))) {
+        if (inputUrl) inputUrl.value = text;
+        this.fetchLiveGameFromUrl(text);
+      } else if (text && (text.includes('.') || text.includes('e4') || text.includes('d4') || text.includes('Nf3'))) {
         if (pgnArea) pgnArea.value = text;
         this.showToast('📋 Move Notation Pasted! Loading mid-game position...');
         this.loadMoveNotation(text);
       }
     });
+  }
+
+  async fetchLiveGameFromUrl(urlOrId) {
+    let gameId = urlOrId.trim();
+
+    if (gameId.includes('lichess.org/')) {
+      const parts = gameId.split('lichess.org/');
+      gameId = parts[1].split('/')[0].slice(0, 8);
+    } else if (gameId.includes('chess.com/')) {
+      this.showToast('ℹ️ For Chess.com, copy the move list (PGN) and paste below!');
+      return;
+    }
+
+    try {
+      this.showToast(`🔍 Fetching live game PGN from Lichess (${gameId})...`);
+      const response = await fetch(`https://lichess.org/game/export/${gameId}?evals=false&clocks=false`);
+
+      if (response.ok) {
+        const pgnText = await response.text();
+        const pgnArea = document.getElementById('input-pgn-text');
+        if (pgnArea) pgnArea.value = pgnText;
+        this.loadMoveNotation(pgnText);
+        this.showToast(`✨ Live Lichess game imported successfully!`);
+      } else {
+        this.showToast('⚠️ Could not fetch game from Lichess. Ensure game ID is valid.');
+      }
+    } catch (e) {
+      this.showToast('⚠️ Direct URL import error. Try copying PGN moves into text box.');
+    }
   }
 
   loadMoveNotation(moveText) {
@@ -610,6 +836,7 @@ class ChessApp {
     this.game.reset();
     this.hasClaimedCurrentGame = false;
     this.clearRecommendations();
+    this.resetClock();
     this.updateBoard(true);
   }
 
@@ -640,7 +867,14 @@ class ChessApp {
         return;
       }
 
-      const move = this.makeMove({ from: this.selectedSquare, to: squareStr, promotion: 'q' });
+      const moveObj = { from: this.selectedSquare, to: squareStr, promotion: 'q' };
+
+      // Feature 4 Check: Puzzle solution check
+      if (this.activePuzzle && this.puzzleStepIndex < this.activePuzzle.solutionMoves.length) {
+        this.checkPuzzleMove(moveObj);
+      }
+
+      const move = this.makeMove(moveObj);
       if (move) {
         this.selectedSquare = null;
         this.renderer.setHighlights(null, []);
@@ -698,6 +932,7 @@ class ChessApp {
   updateBoard(runEngine = true) {
     this.renderer.render(this.game);
     this.updateMoveLog();
+    this.updateClockDisplay();
 
     if (runEngine) {
       const fenAtStart = this.game.fen();
@@ -753,6 +988,8 @@ class ChessApp {
     }
   }
 
+  /* --- Feature 2: Real-time Win Probability % Odds Bar --- */
+
   updateEvalDisplay(evalResult, isYourTurn) {
     const scoreText = document.getElementById('eval-score-val');
     const scoreDisplay = document.getElementById('eval-score-display');
@@ -772,8 +1009,31 @@ class ChessApp {
       }
     }
 
+    const numeric = evalResult.numericScore || 0;
+
+    // Feature 2: Win Odds Calculation
+    // Win Probability = 1 / (1 + 10^(-score / 400))
+    const winProbWhite = Math.round(100 / (1 + Math.pow(10, -numeric / 400)));
+    const drawProb = Math.max(10, Math.round(30 - Math.abs(numeric) / 50));
+    const winProbBlack = Math.max(0, 100 - winProbWhite - drawProb);
+
+    const valW = document.getElementById('odds-white-val');
+    const valD = document.getElementById('odds-draw-val');
+    const valB = document.getElementById('odds-black-val');
+
+    const barW = document.getElementById('bar-odds-white');
+    const barD = document.getElementById('bar-odds-draw');
+    const barB = document.getElementById('bar-odds-black');
+
+    if (valW) valW.textContent = `${winProbWhite}%`;
+    if (valD) valD.textContent = `${drawProb}%`;
+    if (valB) valB.textContent = `${winProbBlack}%`;
+
+    if (barW) barW.style.width = `${winProbWhite}%`;
+    if (barD) barD.style.width = `${drawProb}%`;
+    if (barB) barB.style.width = `${winProbBlack}%`;
+
     if (barFill) {
-      const numeric = evalResult.numericScore || 0;
       const clamped = Math.max(-1000, Math.min(1000, numeric));
       const percentage = 50 + (clamped / 20);
       barFill.style.height = `${percentage}%`;

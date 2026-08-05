@@ -30,7 +30,7 @@
       </div>
       <div class="brand-title">
         <h1>Chess <span>AI Companion</span></h1>
-        <span class="version-tag">Grandmaster Analysis Mode</span>
+        <span class="version-tag">Stockfish 16 Engine</span>
       </div>
     </div>
 
@@ -44,6 +44,32 @@
         <button id="btn-color-black" class="color-btn" title="Play as Black">
           <span class="color-icon">♚</span> YOU ARE BLACK
         </button>
+      </div>
+    </div>
+
+    <!-- Integrated Digital Chess Clock Header Bar -->
+    <div class="header-clock-widget">
+      <div class="clock-display-box">
+        <div class="clock-side clock-white">
+          <span class="clock-label">⚪ WHITE</span>
+          <span id="timer-white" class="clock-time">03:00</span>
+        </div>
+        <div class="clock-divider">:</div>
+        <div class="clock-side clock-black">
+          <span class="clock-label">🖤 BLACK</span>
+          <span id="timer-black" class="clock-time">03:00</span>
+        </div>
+      </div>
+
+      <div class="clock-controls-mini">
+        <select id="select-clock-time" class="custom-select mini-select">
+          <option value="180">3 min Blitz</option>
+          <option value="60">1 min Bullet</option>
+          <option value="300">5 min Rapid</option>
+          <option value="0">No Timer</option>
+        </select>
+        <button id="btn-clock-toggle" class="btn btn-primary mini-btn">▶ Start</button>
+        <button id="btn-clock-reset" class="btn btn-secondary mini-btn">↺ Reset</button>
       </div>
     </div>
 
@@ -144,14 +170,14 @@
       </div>
     </section>
 
-    <!-- Right: Single Unified Side Panel with 3 Tab Options -->
+    <!-- Right: Single Unified Side Panel with 4 Tab Options -->
     <section class="controls-column">
 
-      <!-- AI Winning Move Recommendation Hero Card -->
+      <!-- AI Winning Move Recommendation & Win Odds Percentage Hero Card -->
       <div class="card recommendation-card">
         <div class="card-header">
           <span class="card-icon">⭐</span>
-          <h2>AI Winning Move Suggestion</h2>
+          <h2>AI Winning Move Suggestion & Win Odds</h2>
         </div>
         <div class="card-body">
           <div class="recommendation-hero">
@@ -164,16 +190,31 @@
               <div id="eval-best-move" class="move-value">e2 ➔ e4 (e4)</div>
             </div>
           </div>
+
+          <!-- Feature 2: Real-time Win Probability % Odds Bar -->
+          <div class="win-odds-container" style="margin-top: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-card); border-radius: 12px; padding: 10px 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 6px;">
+              <span style="color: #ffffff;">⚪ White Win: <span id="odds-white-val">50%</span></span>
+              <span style="color: #94a3b8;">🤝 Draw: <span id="odds-draw-val">30%</span></span>
+              <span style="color: #ff5252;">🖤 Black Win: <span id="odds-black-val">20%</span></span>
+            </div>
+            <div class="odds-progress-bar" style="height: 10px; border-radius: 6px; overflow: hidden; display: flex; background: #334155;">
+              <div id="bar-odds-white" style="width: 50%; background: linear-gradient(90deg, #00e5ff, #ffffff); transition: width 0.4s ease;"></div>
+              <div id="bar-odds-draw" style="width: 30%; background: #64748b; transition: width 0.4s ease;"></div>
+              <div id="bar-odds-black" style="width: 20%; background: #ff5252; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Single Side Panel with 3 Switchable Options -->
+      <!-- Single Side Panel with 4 Switchable Options -->
       <div class="card dashboard-tabbed-card" style="border: 2px solid #00e5ff; box-shadow: 0 0 24px rgba(0, 229, 255, 0.3);">
         
-        <!-- 3 Tab Switcher Navigation -->
+        <!-- 4 Tab Switcher Navigation -->
         <div class="dash-nav-tabs">
           <button id="btn-dash-tab-lead" class="dash-tab-btn active">🏆 Leaderboard</button>
-          <button id="btn-dash-tab-pgn" class="dash-tab-btn">📜 Import PGN / FEN</button>
+          <button id="btn-dash-tab-pgn" class="dash-tab-btn">📜 Import PGN / FEN / URL</button>
+          <button id="btn-dash-tab-puzzle" class="dash-tab-btn">🧩 Daily Puzzle</button>
           <button id="btn-dash-tab-controls" class="dash-tab-btn">🕹️ Controls & History</button>
         </div>
 
@@ -221,17 +262,27 @@
             </div>
           </div>
 
-          <!-- OPTION 2: PGN & FEN Importer -->
+          <!-- OPTION 2: PGN & FEN & Live Game URL Importer -->
           <div id="pane-dash-pgn" class="dash-pane hidden">
             <div class="card-header" style="margin-bottom: 10px; font-size: 14px;">
               <span class="card-icon">📜</span>
-              <h2>Import PGN / FEN Position</h2>
+              <h2>Import PGN / FEN / Live Game URL</h2>
             </div>
-            <p class="card-description" style="margin-bottom: 8px; font-size: 12px;">
-              Paste move notation (e.g. <code>1. e4 e6 2. Nc3 Qh4</code>) or FEN string to analyze position:
+            
+            <!-- Feature 5: Direct Lichess / Chess.com URL Importer -->
+            <div class="url-importer-box" style="margin-bottom: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 10px; padding: 10px;">
+              <span style="font-size: 11px; font-weight: 800; color: #00e5ff; display: block; margin-bottom: 4px;">🔗 PASTE LICHESS OR CHESS.COM GAME URL</span>
+              <div class="flex-row">
+                <input type="text" id="input-game-url" placeholder="https://lichess.org/aBcDeFgH or game ID..." class="custom-input" style="font-size: 12px;" />
+                <button id="btn-load-url" class="btn btn-primary" style="white-space: nowrap;">Fetch Live Game</button>
+              </div>
+            </div>
+
+            <p class="card-description" style="margin-bottom: 6px; font-size: 12px;">
+              Or paste move notation (e.g. <code>1. e4 e6 2. Nc3 Qh4</code>) or FEN string:
             </p>
-            <textarea id="input-pgn-text" rows="4" placeholder="Paste moves or PGN here (or Ctrl + V anywhere)..." class="custom-input" style="width: 100%; font-family: monospace; resize: none; margin-bottom: 10px; font-size: 12px;"></textarea>
-            <button id="btn-load-pgn" class="btn btn-primary btn-full-width" style="margin-bottom: 12px; padding: 10px;">
+            <textarea id="input-pgn-text" rows="3" placeholder="Paste moves or PGN here (or Ctrl + V anywhere)..." class="custom-input" style="width: 100%; font-family: monospace; resize: none; margin-bottom: 8px; font-size: 12px;"></textarea>
+            <button id="btn-load-pgn" class="btn btn-primary btn-full-width" style="margin-bottom: 10px; padding: 8px;">
               ⚡ Load Mid-Game Moves & Calculate Winning Move
             </button>
 
@@ -241,7 +292,31 @@
             </div>
           </div>
 
-          <!-- OPTION 3: Quick Controls & Move History Log -->
+          <!-- OPTION 3: Feature 4 - Daily Tactical Puzzle Solver -->
+          <div id="pane-dash-puzzle" class="dash-pane hidden">
+            <div class="card-header" style="justify-content: space-between; margin-bottom: 10px; font-size: 14px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="card-icon">🧩</span>
+                <h2 id="puzzle-title">Morphy's Opera Game Mate</h2>
+              </div>
+              <span class="win-count-pill" style="background: rgba(255, 215, 0, 0.15); border-color: rgba(255, 215, 0, 0.4); color: #ffd700;">+15 ELO Bonus</span>
+            </div>
+
+            <p id="puzzle-desc" class="card-description" style="margin-bottom: 10px; font-size: 12px; color: #ffffff; background: rgba(15, 23, 42, 0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-card);">
+              White to move and force checkmate! Find Morphy's tactical sequence on the board.
+            </p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <button id="btn-start-puzzle" class="btn btn-primary" style="flex: 1; padding: 8px;">⚡ Load Puzzle on Board</button>
+              <button id="btn-next-puzzle" class="btn btn-secondary" style="white-space: nowrap;">Next Puzzle ➔</button>
+            </div>
+
+            <div id="puzzle-status-box" style="font-size: 12px; font-weight: 700; color: #94a3b8; text-align: center; padding: 6px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+              Click "Load Puzzle on Board" to play & earn +15 ELO!
+            </div>
+          </div>
+
+          <!-- OPTION 4: Quick Controls & Move History Log -->
           <div id="pane-dash-controls" class="dash-pane hidden">
             <div class="card-header" style="margin-bottom: 10px; font-size: 14px;">
               <span class="card-icon">🕹️</span>
@@ -289,6 +364,6 @@
     </section>
   </main>
 
-  <script type="module" src="/src/app.js?v=4.0.0"></script>
+  <script type="module" src="/src/app.js?v=5.0.0"></script>
 </body>
 </html>
