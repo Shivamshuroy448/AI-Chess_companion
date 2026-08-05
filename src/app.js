@@ -1,6 +1,6 @@
 /**
  * Main Application Orchestrator
- * Integrates Stockfish 16 Engine, Google OAuth & Global Leaderboard Dashboard.
+ * Integrates Stockfish 16 Engine, Google OAuth with Auto-Nationality Flag Detection & Global Leaderboard.
  */
 
 import { Chess } from 'chess.js';
@@ -57,6 +57,20 @@ class ChessApp {
       .replace(/'/g, '&#039;');
   }
 
+  getFlagFromLocale(localeStr) {
+    if (!localeStr || typeof localeStr !== 'string') return '🇮🇳';
+    const parts = localeStr.split('-');
+    const code = parts.length > 1 ? parts[1].toUpperCase() : parts[0].toUpperCase();
+
+    const flagMap = {
+      'IN': '🇮🇳', 'US': '🇺🇸', 'GB': '🇬🇧', 'CA': '🇨🇦', 'AU': '🇦🇺',
+      'DE': '🇩🇪', 'FR': '🇫🇷', 'JP': '🇯🇵', 'BR': '🇧🇷', 'ES': '🇪🇸',
+      'IT': '🇮🇹', 'RU': '🇷🇺', 'CN': '🇨🇳', 'KR': '🇰🇷', 'NL': '🇳🇱',
+      'SE': '🇸🇪', 'NO': '🇳🇴', 'MX': '🇲🇽', 'AR': '🇦🇷', 'ZA': '🇿🇦'
+    };
+    return flagMap[code] || '🇮🇳';
+  }
+
   /* --- Global Leaderboard & Real-Time Ticker --- */
 
   initLeaderboardUI() {
@@ -82,17 +96,17 @@ class ChessApp {
     const container = document.getElementById('leaderboard-table-list');
     if (!container) return;
 
-    // Combine global champions with active current user
     let list = [...this.globalLeaderboard];
 
     const userWon = this.currentUser ? (this.currentUser.gamesWon || 0) : 0;
     const userPlayed = this.currentUser ? (this.currentUser.gamesPlayed || 0) : 0;
     const userRate = userPlayed > 0 ? Math.round((userWon / userPlayed) * 100) + '%' : '0%';
     const userName = this.currentUser ? (this.currentUser.username || 'You') : 'You (Guest)';
+    const userFlag = (this.currentUser && this.currentUser.flag) ? this.currentUser.flag : '🇮🇳';
 
     const userEntry = {
       name: `${userName} (You)`,
-      flag: '🎮',
+      flag: userFlag,
       wins: userWon,
       rate: userRate,
       isUser: true
@@ -102,7 +116,6 @@ class ChessApp {
     list.sort((a, b) => b.wins - a.wins);
 
     if (viewMode === 'me') {
-      // Scroll to user rank
       const userIndex = list.findIndex(item => item.isUser);
       const start = Math.max(0, userIndex - 2);
       list = list.slice(start, start + 6);
@@ -174,7 +187,9 @@ class ChessApp {
           }).join(''));
 
           const payload = JSON.parse(jsonPayload);
-          this.loginWithGoogleUser(payload.name, payload.email, payload.picture);
+          const autoFlag = this.getFlagFromLocale(payload.locale);
+
+          this.loginWithGoogleUser(payload.name, payload.email, payload.picture, autoFlag);
         } catch (e) {
           console.error('Google token parse error', e);
         }
@@ -208,7 +223,7 @@ class ChessApp {
     }
   }
 
-  loginWithGoogleUser(name, email, pictureUrl) {
+  loginWithGoogleUser(name, email, pictureUrl, detectedFlag) {
     const cleanEmail = email ? email.toLowerCase() : '';
     const usersDb = JSON.parse(localStorage.getItem('chess_users_db_v2') || '{}');
     const existing = usersDb[cleanEmail];
@@ -219,12 +234,14 @@ class ChessApp {
     if (existing) {
       existing.picture = pictureUrl || existing.picture;
       existing.username = safeName || existing.username;
+      existing.flag = existing.flag || detectedFlag || '🇮🇳';
       this.currentUser = existing;
     } else {
       this.currentUser = {
         username: safeName || 'Google User',
         email: safeEmail,
         picture: pictureUrl,
+        flag: detectedFlag || '🇮🇳',
         provider: 'google',
         gamesWon: 0,
         gamesPlayed: 0,
@@ -236,7 +253,7 @@ class ChessApp {
     this.renderLeaderboard('top');
     const modalLogin = document.getElementById('modal-login');
     if (modalLogin) modalLogin.classList.add('hidden');
-    this.showToast(`✨ Signed in with Google as ${this.currentUser.username}!`);
+    this.showToast(`✨ Signed in with Google as ${this.currentUser.username} (${this.currentUser.flag})!`);
   }
 
   saveUserSession() {
@@ -257,6 +274,7 @@ class ChessApp {
     const loggedOutView = document.getElementById('user-logged-out-view');
     const loggedInView = document.getElementById('user-logged-in-view');
     const avatarContainer = document.getElementById('user-avatar-container');
+    const flagSelect = document.getElementById('user-flag-select');
     const nameEl = document.getElementById('user-display-name');
     const wonEl = document.getElementById('stat-games-won');
     const winRateEl = document.getElementById('stat-win-rate');
@@ -271,6 +289,10 @@ class ChessApp {
         } else {
           avatarContainer.textContent = '👤';
         }
+      }
+
+      if (flagSelect) {
+        flagSelect.value = this.currentUser.flag || '🇮🇳';
       }
 
       if (nameEl) nameEl.textContent = this.currentUser.username || this.currentUser.email;
@@ -299,6 +321,7 @@ class ChessApp {
       this.currentUser = {
         username: 'Guest Player',
         email: 'guest@local',
+        flag: '🇮🇳',
         gamesWon: 1,
         gamesPlayed: 1,
         createdAt: new Date().toISOString()
@@ -322,6 +345,16 @@ class ChessApp {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnLogout = document.getElementById('btn-user-logout');
     const btnClaimVictory = document.getElementById('btn-claim-victory');
+    const flagSelect = document.getElementById('user-flag-select');
+
+    flagSelect?.addEventListener('change', (e) => {
+      if (this.currentUser) {
+        this.currentUser.flag = e.target.value;
+        this.saveUserSession();
+        this.renderLeaderboard('top');
+        this.showToast(`🚩 Flag updated to ${this.currentUser.flag}!`);
+      }
+    });
 
     btnOpenLogin?.addEventListener('click', () => {
       modalLogin?.classList.remove('hidden');
@@ -462,7 +495,7 @@ class ChessApp {
       this.updateBoard(true);
       this.showToast(`✨ Loaded ${this.game.history().length} moves! Current position ready.`);
     } catch (err) {
-      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nf3');
+      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nc3');
     }
   }
 

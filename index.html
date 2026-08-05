@@ -60,6 +60,20 @@
       <div id="user-logged-in-view" class="user-auth-box hidden">
         <div class="user-stats-badge">
           <span id="user-avatar-container" class="user-avatar-icon">👤</span>
+          <select id="user-flag-select" class="user-flag-picker" title="Change Nationality Flag">
+            <option value="🇮🇳">🇮🇳 India</option>
+            <option value="🇺🇸">🇺🇸 USA</option>
+            <option value="🇬🇧">🇬🇧 UK</option>
+            <option value="🇨🇦">🇨🇦 Canada</option>
+            <option value="🇦🇺">🇦🇺 Australia</option>
+            <option value="🇩🇪">🇩🇪 Germany</option>
+            <option value="🇫🇷">🇫🇷 France</option>
+            <option value="🇯🇵">🇯🇵 Japan</option>
+            <option value="🇧🇷">🇧🇷 Brazil</option>
+            <option value="🇪🇸">🇪🇸 Spain</option>
+            <option value="🇳🇴">🇳🇴 Norway</option>
+            <option value="🏳️">🏳️ Global</option>
+          </select>
           <span id="user-display-name" class="user-name-text">Player</span>
           <div class="win-count-pill">
             🏆 Won: <span id="stat-games-won">0</span>
@@ -83,7 +97,7 @@
 
       <div class="modal-body" style="text-align: center;">
         <p class="modal-description" style="margin-bottom: 24px;">
-          Sign in with your Google account to automatically track your wins and game statistics!
+          Sign in with your Google account to automatically auto-detect your nationality and track your wins on the worldwide leaderboard!
         </p>
 
         <!-- Official Native Google Sign-In Container -->
