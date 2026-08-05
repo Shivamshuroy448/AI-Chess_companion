@@ -42,7 +42,6 @@ class ChessApp {
   }
 
   initGoogleAuth() {
-    // Helper to decode Google JWT token
     window.handleGoogleCredentialResponse = (response) => {
       if (response && response.credential) {
         try {
@@ -59,6 +58,33 @@ class ChessApp {
         }
       }
     };
+
+    // Render Native Google Sign-In Button
+    const setupNativeButton = () => {
+      const target = document.getElementById('google-signin-btn-target');
+      if (window.google && window.google.accounts && target) {
+        window.google.accounts.id.initialize({
+          client_id: '7124968392-sampleclientid.apps.googleusercontent.com',
+          callback: window.handleGoogleCredentialResponse
+        });
+
+        window.google.accounts.id.renderButton(target, {
+          theme: 'outline',
+          size: 'large',
+          type: 'standard',
+          shape: 'rectangular',
+          text: 'signin_with',
+          logo_alignment: 'left',
+          width: 320
+        });
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      setTimeout(setupNativeButton, 500);
+    } else {
+      window.addEventListener('load', () => setTimeout(setupNativeButton, 500));
+    }
   }
 
   loginWithGoogleUser(name, email, pictureUrl) {
@@ -225,7 +251,6 @@ class ChessApp {
     const modalLogin = document.getElementById('modal-login');
     const btnOpenLogin = document.getElementById('btn-open-login');
     const btnCloseModal = document.getElementById('btn-close-modal');
-    const btnGoogleLogin = document.getElementById('btn-custom-google-login');
 
     const tabBtnLogin = document.getElementById('tab-btn-login');
     const tabBtnRegister = document.getElementById('tab-btn-register');
@@ -247,34 +272,6 @@ class ChessApp {
     const btnLogout = document.getElementById('btn-user-logout');
     const btnClaimVictory = document.getElementById('btn-claim-victory');
 
-    // Google Sign-In Trigger
-    btnGoogleLogin?.addEventListener('click', () => {
-      if (window.google && window.google.accounts) {
-        window.google.accounts.id.initialize({
-          client_id: '7124968392-sampleclientid.apps.googleusercontent.com',
-          callback: window.handleGoogleCredentialResponse
-        });
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Prompt fallback for Google Account picker
-            const googleEmail = prompt('Enter your Gmail address to sign in with Google:');
-            if (googleEmail && googleEmail.includes('@gmail.com')) {
-              const name = googleEmail.split('@')[0];
-              const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-              this.loginWithGoogleUser(name, googleEmail, avatar);
-            }
-          }
-        });
-      } else {
-        const googleEmail = prompt('Enter your Gmail address to sign in with Google:');
-        if (googleEmail && googleEmail.includes('@gmail.com')) {
-          const name = googleEmail.split('@')[0];
-          const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-          this.loginWithGoogleUser(name, googleEmail, avatar);
-        }
-      }
-    });
-
     // Tab Switcher Handlers
     tabBtnLogin?.addEventListener('click', () => {
       tabBtnLogin.classList.add('active');
@@ -294,6 +291,20 @@ class ChessApp {
       modalLogin?.classList.remove('hidden');
       if (loginErr) loginErr.classList.add('hidden');
       if (regErr) regErr.classList.add('hidden');
+
+      // Re-render Google button when modal opens
+      const target = document.getElementById('google-signin-btn-target');
+      if (window.google && window.google.accounts && target) {
+        window.google.accounts.id.renderButton(target, {
+          theme: 'outline',
+          size: 'large',
+          type: 'standard',
+          shape: 'rectangular',
+          text: 'signin_with',
+          logo_alignment: 'left',
+          width: 320
+        });
+      }
       loginEmail?.focus();
     });
 
@@ -472,7 +483,7 @@ class ChessApp {
       this.updateBoard(true);
       this.showToast(`✨ Loaded ${this.game.history().length} moves! Current position ready.`);
     } catch (err) {
-      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nc3');
+      this.showToast('⚠️ Could not parse move text. Ensure notation format is e.g. 1. e4 e5 2. Nf3');
     }
   }
 
