@@ -285,7 +285,7 @@ class ChessApp {
 
       if (avatarContainer) {
         if (this.currentUser.picture) {
-          avatarContainer.innerHTML = `<img src="${this.currentUser.picture}" alt="Avatar" class="user-avatar-img" />`;
+          avatarContainer.innerHTML = `<img src="${this.currentUser.picture}" alt="Avatar" class="user-avatar-img" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.innerHTML='👤';" />`;
         } else {
           avatarContainer.textContent = '👤';
         }
